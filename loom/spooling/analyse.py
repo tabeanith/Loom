@@ -450,6 +450,7 @@ if __name__ == "__main__":
     plt.legend()
 
     ts_tradeday = None
+    ts_tradeday = pd.Timestamp(date.today(), tz=tz).floor("D") - Day(1)
 
 
     print_to_do(M_all_open_volume, ts_tradeday)
