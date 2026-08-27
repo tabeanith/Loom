@@ -288,7 +288,7 @@ if __name__ == "__main__":
 
 
     contract_sampling = "MS"
-    start_n_month_before_del = 5
+    start_n_month_before_del = 4
     hours = 24 * 30
     mw_sizing = 10
     total_mtm_months, df_all_open_volume_months = run(contract_sampling, start_n_month_before_del, hours, mw_sizing)
@@ -298,7 +298,7 @@ if __name__ == "__main__":
     contract_sampling = "QS"
     start_n_month_before_del = 9
     hours = 24 * 30 * 3
-    mw_sizing = 3
+    mw_sizing = 5
     total_mtm_quarters, df_all_open_volume_quarters = run(contract_sampling, start_n_month_before_del, hours, mw_sizing)
 
 

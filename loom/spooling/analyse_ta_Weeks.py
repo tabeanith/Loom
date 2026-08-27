@@ -250,6 +250,58 @@ if __name__ == "__main__":
 
 
 
+    # Some data analysis:
+    data = []
+    for ts_contract in df_prices_power.columns:
+        prices = df_prices_power[ts_contract]
+        residual = df_mwh_residual[ts_contract]
+        last_day_of_delivery = ts_contract
+
+        _slice_spt = prices[prices.index > last_day_of_delivery]
+        if _slice_spt.empty: continue
+        ts_spot_result = _slice_spt.index[0]
+
+        _slice_fwd = prices[prices.index < last_day_of_delivery - Day(7)]
+        if _slice_fwd.empty: continue
+        if len(_slice_fwd) < 15: continue
+
+        spot_result = prices.loc[ts_spot_result]
+        p_week_t1 = _slice_fwd.iloc[-5:].mean()
+        p_week_t2 = _slice_fwd.iloc[-10:-5].mean()
+        p_week_t3 = _slice_fwd.iloc[-15:-10].mean()
+
+        _slice_rdl = residual[residual.index < last_day_of_delivery - Day(7)]
+        r_week_t1 = _slice_rdl.iloc[-5:].mean()
+        r_week_t2 = _slice_rdl.iloc[-10:-5].mean()
+        r_week_t3 = _slice_rdl.iloc[-15:-10].mean()
+
+
+
+
+        data.append({
+            "ts_contract": ts_contract,
+            "spot_result": spot_result,
+            "p_week_t1": p_week_t1,
+            "p_week_t2": p_week_t2,
+            "p_week_t3": p_week_t3,
+            "r_week_t1": r_week_t1,
+            "r_week_t2": r_week_t2,
+            "r_week_t3": r_week_t3,
+        })
+
+    df_data = pd.DataFrame(data)
+
+
+
+
+
+
+
+
+
+
+
+
     def run(contract_sampling, hours, mw_sizing):
         all_mtm = []
         all_open_volume = []
