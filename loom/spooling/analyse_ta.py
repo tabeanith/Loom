@@ -252,7 +252,7 @@ if __name__ == "__main__":
         df_prices_power = curves_power.resample(contract_sampling).mean().T
         df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
 
-        for ts_contract in pd.date_range(pd.Timestamp(date(2025, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
+        for ts_contract in pd.date_range(pd.Timestamp(date(2026, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
             ts_start_trading = ts_contract - MonthBegin(start_n_month_before_del)
 
             mtm, open_volume = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power,
@@ -269,54 +269,39 @@ if __name__ == "__main__":
         plt.legend()
 
         print("Total MtM", total_mtm.iloc[-1])
+        return total_mtm, df_all_open_volume
+
+
 
 
     contract_sampling = "MS"
     start_n_month_before_del = 4
-    hours = 30*12
-    mw_sizing = 10
-
-    run(contract_sampling, start_n_month_before_del, hours, mw_sizing)
-
-
-
-
-
-
-
-    mtm_total = []
-    all_open_volume = []
-    contract_sample = "MS"
     hours = 24 * 30
     mw_sizing = 10
 
-    for ts_contract in pd.date_range(pd.Timestamp(date(2026, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz),
-                                     freq=contract_sample):
-        ts_start_trading = ts_contract - MonthBegin(4)
-        mtm, open_volume = run_test(ts_contract, ts_start_trading, mw_sizing, df_prices_power,
-                                         df_contract_sentiment, df_scores, map_contract_to_score,
-                                         force_close_delivery=False, show_plot=False)
-        mtm_total.append(mtm * hours)
-        all_open_volume.append(open_volume)
-
-    _mtm_total = pd.concat(mtm_total, axis=1).ffill(axis=0).fillna(0)
-    M_all_open_volume = pd.concat(all_open_volume, axis=1).fillna(0)
-    _mtm_total.plot()
-    pnl_allmonths = _mtm_total.sum(axis=1)
-    pnl_allmonths.plot(color="black", label="pnl_allmonths")
-    print(pnl_allmonths.iloc[-1])
-    plt.legend()
-
-    pnl_allmonths[-30:]
-    df_relevant_pos = M_all_open_volume.iloc[-30:, -8:]
-
-    pnl_total = pnl_allquarters + pnl_allmonths
-    pnl_total[-30:]
+    total_mtm_months, df_all_open_volume_months = run(contract_sampling, start_n_month_before_del, hours, mw_sizing)
 
 
-    pnl_allmonths.plot(color="orange", label="pnl_allmonths")
-    pnl_allquarters.plot(color="blue", label="pnl_allquarters")
-    (pnl_allquarters + pnl_allmonths).plot(color="black", label="Total")
+
+
+    contract_sampling = "QS"
+    start_n_month_before_del = 12
+    hours = 24 * 30 * 3
+    mw_sizing = 3
+
+    total_mtm_quarters, df_all_open_volume_quarters = run(contract_sampling, start_n_month_before_del, hours, mw_sizing)
+
+
+
+
+
+
+
+
+
+    total_mtm_months.plot(color="orange", label="total_mtm_months")
+    total_mtm_quarters.plot(color="blue", label="total_mtm_quarters")
+    (total_mtm_months + total_mtm_quarters).plot(color="black", label="total_mtm_quarters")
 
 
 
