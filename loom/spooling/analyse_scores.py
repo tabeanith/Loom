@@ -354,7 +354,7 @@ if __name__ == "__main__":
 
 
 
-    ts_contract = pd.Timestamp(date(2026, 9, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 12, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(4)
     n_contracts = 5
     contract_sample = "MS"

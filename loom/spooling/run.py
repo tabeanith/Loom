@@ -6,7 +6,7 @@ from loom.spooling.source.reuters.run import Reuters
 from loom.spooling.topics.t01_weather.topic import T01_Weather
 from loom.spooling.topics.t02_gas_fuel.topic import T02_Gas_Fuel
 
-from loom.spooling.ask_and_answer import ask_and_answer
+from loom.spooling.llm.ask_and_answer import ask_and_answer
 
 import pandas as pd
 from pandas.tseries.offsets import Day
