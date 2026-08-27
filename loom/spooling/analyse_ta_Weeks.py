@@ -37,7 +37,7 @@ tz = "Europe/Berlin"
 
 
 
-def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_power, df_contract_sentiment, df_mwh_residual, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False):
+def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_mwh_residual, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False):
     n_contracts = max(1, mw_sizing)
 
     # ---------------------- Get prices and sentiment -----------------------------
@@ -168,12 +168,13 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
         scores = df_scores[map_contract_to_score[ts_contract]]
         ax2.scatter(x=scores.index, y=scores.values, label="scores", marker='o', linestyle='None')
         ax2.stem(scores.index, scores.values)
+        idx_sentiment.plot(ax=ax2, label="idx_sentiment", color="orange")
+
 
         vol = 1
         (vol*result_open_position).plot(ax=ax2, label="result_open_position", color="black")
         (vol*scaled_buy).plot(ax=ax2, label="scaled_buy", color="green")
         (vol*scaled_sell).plot(ax=ax2, label="scaled_sell", color="red")
-        idx_sentiment.plot(ax=ax2, label="score_reduction", color="orange")
 
         (vol * result_mtm * 31 * 24).plot(ax=ax3, label="result_mtm")
         ax3.axhline(y=0.0, color='r', linestyle='-')
@@ -228,7 +229,7 @@ if __name__ == "__main__":
 
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
 
-    ts_contract = pd.Timestamp(date(2026, 8, 16), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 8, 9), tz=tz)
     ts_start_trading = ts_contract - Day(14)
     mw_sizing = 5
 
