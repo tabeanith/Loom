@@ -25,103 +25,15 @@ from loom.spooling.topics.t02_gas_fuel.topic import T02_Gas_Fuel
 
 from loom.data.keys import Keys
 from loom.data.curves.get import read_curves_from_onedrive
+from loom.data.curves.get import extend_snapshot_days_to_today
+
+from loom.spooling.analyse_scores import calculate_sentiment_v1
 
 
 
 pio.renderers.default = "browser"
 tz = "Europe/Berlin"
 
-
-def create_plot(list_of_scores, list_of_topics, list_of_colors, prices, implied, ts_forward):
-    fig = go.Figure()
-
-    custom_colorscale = [
-        [0.0, "#331D75"],
-        [0.5, "#FFFFFF"],
-        [1.0, "#331D75"],
-    ]
-
-    for df_score, topic, topic_color in zip(list_of_scores, list_of_topics, list_of_colors):
-        x = df_score["timestamp"].values
-        y = df_score[ts_forward].values
-
-        # opens in your default web browser
-        fig.add_trace(go.Scatter(
-            x=x,
-            y=y,
-            mode="markers",
-            marker=dict(
-                size=7,
-                color=y,  # color by value
-                colorscale=custom_colorscale,
-                showscale=True,
-                cmax=100,
-                cmin=-100,
-            )
-        ))
-
-        # prices
-        if prices is not None:
-            fig.add_trace(go.Scatter(
-                x=prices.index,
-                y=prices.values,
-                mode="lines+markers",
-                marker=dict(
-                    size=5,
-                    color="#331D75",
-                )
-            ))
-
-        # implied
-        if implied is not None:
-            fig.add_trace(go.Scatter(
-                x=implied.index,
-                y=implied.values,
-                mode="lines+markers",
-                marker=dict(
-                    size=5,
-                    color="red",
-                )
-            ))
-        # Add vertical lines from 0 to each point
-        for xi, yi in zip(x, y):
-            fig.add_shape(
-                type="line",
-                x0=xi, x1=xi,
-                y0=0, y1=yi,
-                line=dict(color=topic_color,
-                          width=1,
-                          )
-            )
-
-    # Shade weekends (Saturday=5, Sunday=6)
-    df_score = list_of_scores[0]
-    ts_first = df_score["timestamp"].values[0]
-    ts_last = df_score["timestamp"].values[-1]
-    days = pd.date_range(pd.Timestamp(ts_last).floor("D"), pd.Timestamp(ts_first).ceil("D"), freq="D")
-    for _ts in days:
-        _ts = pd.Timestamp(_ts)
-        if _ts.dayofweek == 5:  # Saturday: shade Sat + Sun as one block
-            fig.add_vrect(
-                x0=_ts,
-                x1=_ts + pd.Timedelta(days=2),
-                fillcolor="#442196",
-                opacity=0.2,
-                layer="below",  # draw behind the data
-                line_width=0  # no border line
-            )
-        if _ts.day == 1:  # Saturday: shade Sat + Sun as one block
-            fig.add_vline(
-                x=_ts,
-                fillcolor="black",
-                opacity=1,
-            )
-
-    # Optional: add a horizontal reference line at y=0
-    fig.add_hline(y=0, line=dict(color="white", width=3))
-
-    fig.update_layout(title=f"Forward contract {ts_forward.strftime("%Y %B")} Base")
-    fig.show()
 
 
 def calculate_mtm_from_buy_sell(buy_dirac, sell_dirac, prices):
@@ -163,59 +75,36 @@ if __name__ == "__main__":
 
     df_score1 = topic_weather.calculate_scores(df)
     df_score2 = topic_gas_fuel.calculate_scores(df)
-    df_score = pd.concat([df_score1, df_score2]).sort_values("timestamp", ascending=False)
+    df_scores = pd.concat([df_score1, df_score2]).sort_values("timestamp", ascending=False)
+
+
 
 
     curves_power = read_curves_from_onedrive(f"data_historical_2024+", Keys.power_germany)
+    curves_power = extend_snapshot_days_to_today(curves_power)
 
 
-    # Extent curves to today to have the news median today:
-    columns = curves_power.columns
-    today = pd.Timestamp.today(tz=tz)
-    extended_trading_days = pd.bdate_range(columns[-1], today)
-    new_columns = columns.append(extended_trading_days).unique()
-    curves_power = curves_power.reindex(columns=new_columns)
+    # Reduction for Monthlies
+
+    contract_sample = "MS"
+
+    df_prices_power = curves_power.resample(contract_sample).mean().T
+
+    df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
 
 
 
-    def run_test(curves_power, contract_sample, ts_contract, ts_start_trading, n_contracts: int, force_close_delivery=False, show_plot=False):
-        n_contracts = max(1, n_contracts)
 
-        # ---------------------- Get historical prices and power price curve -----------------------------
-        prices_power = curves_power.resample(contract_sample).mean().T[ts_contract]
+    def run_test(ts_contract, ts_start_trading, mw_sizing: int, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False):
+        n_contracts = max(1, mw_sizing)
+
+        # ---------------------- Get prices and sentiment -----------------------------
+        prices_power = df_prices_power[ts_contract]
+        idx_sentiment = df_contract_sentiment[ts_contract]
 
         mask1 = prices_power.index.date >= ts_start_trading.date()
         mask2 = prices_power.index.date < ts_contract.date()
         mask_trading = mask1 & mask2
-
-
-        # ---------------------- Get sentiment scoring -----------------------------
-
-        # For the sentiment, always look ahead slightly (relevant for Weeklies, doesnt affect Months and Quarters)
-        ts_ahead = (ts_contract + Day(6))
-        ts_contract_for_sentiment = pd.Timestamp(date(ts_ahead.year, ts_ahead.month, 1), tz=tz)
-
-        if ts_contract_for_sentiment in df_score.columns:
-            _df_score = df_score[ts_contract_for_sentiment]
-            score_reduction = pd.Series(index=prices_power.index, data=np.nan)
-
-            for ts in score_reduction.index:
-                ts_from = ts.floor("D") - Day(7)
-                ts_to = ts.floor("D") + Hour(16)
-                __df_score = _df_score[(_df_score.index >= ts_from) & (_df_score.index <= ts_to)]
-                __medianmed = __df_score.median()
-                __median1 = __df_score.quantile(0.9)
-                __median3 = __df_score.quantile(0.1)
-
-                score_reduction.loc[ts] = (0.333 * __medianmed + 0.333 * __median1 + 0.333 * __median3)
-
-            scores = _df_score
-        else:
-            scores = pd.Series(index=prices_power.index)
-            score_reduction = pd.Series(index=prices_power.index)
-
-        scores = scores.fillna(0)
-        score_reduction = score_reduction.reindex(index=prices_power.index).fillna(0)
 
 
         # ------------------------------------- Trading -----------------------------------
@@ -240,8 +129,8 @@ if __name__ == "__main__":
         buyX = (prices_power < middle).astype(int) * 3 * n_contracts
 
         # From buys and sells, weight them based on sentinemt:
-        scaled_buy = buys * (1. - score_reduction/100.) + buyX * (score_reduction/100.)
-        scaled_sell = sells * (1. - score_reduction/100.) + sellX * (score_reduction/100.)
+        scaled_buy = buys * (1. - idx_sentiment/100.) + buyX * (idx_sentiment/100.)
+        scaled_sell = sells * (1. - idx_sentiment/100.) + sellX * (idx_sentiment/100.)
 
         scaled_buy = scaled_buy[mask_trading]
         scaled_sell = scaled_sell[mask_trading]
@@ -256,7 +145,7 @@ if __name__ == "__main__":
         # Check boundaries on open_volume and adjust trading:
         maximum = +15 * n_contracts
         minimum = -15 * n_contracts
-        ind_sentiment = score_reduction / 100. * n_contracts * 15
+        ind_sentiment = idx_sentiment / 100. * n_contracts * 15
         _minimum = ind_sentiment + minimum
         _maximum = ind_sentiment + maximum
         _minimum = _minimum.clip(upper=0)
@@ -291,7 +180,7 @@ if __name__ == "__main__":
         ts_last_trading_days = ts_contract - BDay(5)
         mask_last_trading_week = (open_volume2.index >= ts_last_trading_days) & (open_volume2.index < ts_contract)
         final_positions = open_volume2[mask_last_trading_week]
-        final_sentiment = score_reduction[mask_last_trading_week]
+        final_sentiment = idx_sentiment[mask_last_trading_week]
 
         if (not final_positions.empty) and (not final_sentiment.empty):
             x_pos = final_positions.mean()
@@ -317,12 +206,15 @@ if __name__ == "__main__":
         # Recalculate buys and sells -- Either way the position is unchanged into delivery, or adjusted, but we have to calculate the pnl into delivery anyway
         deliv_open_volume = open_volume2.reindex(index=prices_power.index).ffill().fillna(0)
 
-        mtmfinal, open_volumefinal = calculate_mtm_from_open_position(deliv_open_volume, _traded_prices)
-        mtmfinal = mtmfinal.ffill()
+        result_mtm, result_open_position = calculate_mtm_from_open_position(deliv_open_volume, _traded_prices)
+        result_mtm = mtm.ffill()
+
+        result_mtm.name = ts_contract
+        result_open_position.name = ts_contract
 
 
-        if len(mtmfinal) > 0:
-            print(f"Contract {ts_contract} mtm:", mtmfinal.iloc[-1])
+        if len(result_mtm) > 0:
+            print(f"Contract {ts_contract} MtM:   ", result_mtm.iloc[-1])
 
         if show_plot:
             fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, sharex=True)
@@ -333,34 +225,32 @@ if __name__ == "__main__":
             middle.plot(ax=ax1, label="prices0.5")
             lower.plot(ax=ax1, label="prices0.2")
 
-
+            scores = df_scores[map_contract_to_score[ts_contract]]
             ax2.scatter(x=scores.index, y=scores.values, label="scores", marker='o', linestyle='None')
             ax2.stem(scores.index, scores.values)
 
             vol = 1
-            (vol*open_volumefinal).plot(ax=ax2, label="open_volumefinal", color="black")
+            (vol*result_open_position).plot(ax=ax2, label="result_open_position", color="black")
             (vol*scaled_buy).plot(ax=ax2, label="scaled_buy", color="green")
             (vol*scaled_sell).plot(ax=ax2, label="scaled_sell", color="red")
-            score_reduction.plot(ax=ax2, label="score_reduction", color="orange")
+            idx_sentiment.plot(ax=ax2, label="score_reduction", color="orange")
 
-            (vol * mtmfinal * 31 * 24).plot(ax=ax3, label="mtm")
+            (vol * result_mtm * 31 * 24).plot(ax=ax3, label="result_mtm")
             ax3.axhline(y=0.0, color='r', linestyle='-')
 
             plt.legend()
             plt.show()
 
-        return mtmfinal, open_volumefinal, score_reduction
+        return result_mtm, result_open_position
 
 
 
 
     ts_contract = pd.Timestamp(date(2026, 12, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(4)
-    n_contracts = 5
-    contract_sample = "MS"
+    mw_sizing = 5
 
-    mtm, open_volume, score_reduction = run_test(curves_power, contract_sample, ts_contract, ts_start_trading, n_contracts, force_close_delivery=False, show_plot=True)
-    print(mtm.iloc[-1])
+    mtm, open_volumefinal = run_test(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False)
 
 
 
@@ -375,10 +265,9 @@ if __name__ == "__main__":
         ts_start_trading = ts_contract - MonthBegin(12)
         print(ts_contract, ts_start_trading)
 
-
-        mtm, open_volume, score_reduction = run_test(curves_power, contract_sample, ts_contract, ts_start_trading, n_contracts, force_close_delivery=False, show_plot=False)
-        mtm.name = ts_contract
-        open_volume.name = ts_contract
+        mtm, open_volume = run_test(ts_contract, ts_start_trading, mw_sizing, df_prices_power,
+                                         df_contract_sentiment, df_scores, map_contract_to_score,
+                                         force_close_delivery=False, show_plot=False)
         mtm_total.append(mtm * hours)
         all_open_volume.append(open_volume)
 
@@ -405,11 +294,12 @@ if __name__ == "__main__":
     for ts_contract in pd.date_range(pd.Timestamp(date(2026, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz),
                                      freq=contract_sample):
         ts_start_trading = ts_contract - MonthBegin(4)
-        mtm, open_volume, score_reduction = run_test(curves_power, contract_sample, ts_contract, ts_start_trading, n_contracts, force_close_delivery=False, show_plot=False)
-        mtm.name = ts_contract
-        open_volume.name = ts_contract
+        mtm, open_volume = run_test(ts_contract, ts_start_trading, mw_sizing, df_prices_power,
+                                         df_contract_sentiment, df_scores, map_contract_to_score,
+                                         force_close_delivery=False, show_plot=False)
         mtm_total.append(mtm * hours)
         all_open_volume.append(open_volume)
+        
     _mtm_total = pd.concat(mtm_total, axis=1).ffill(axis=0).fillna(0)
     M_all_open_volume = pd.concat(all_open_volume, axis=1).fillna(0)
     _mtm_total.plot()

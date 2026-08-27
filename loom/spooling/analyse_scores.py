@@ -25,6 +25,7 @@ from loom.spooling.topics.t02_gas_fuel.topic import T02_Gas_Fuel
 
 from loom.data.keys import Keys
 from loom.data.curves.get import read_curves_from_onedrive
+from loom.data.curves.get import extend_snapshot_days_to_today
 
 
 
@@ -35,7 +36,7 @@ tz = "Europe/Berlin"
 def create_plot(
         ts_contract,
         df_prices_power,
-        df_score,
+        df_scores,
         df_contract_sentiment,
         map_contract_to_score,
         list_of_topics,
@@ -51,8 +52,8 @@ def create_plot(
 
 
     # Score dots
-    x = df_score[ts_contract].index
-    y = df_score[ts_contract].values
+    x = df_scores[ts_contract].index
+    y = df_scores[ts_contract].values
     fig.add_trace(go.Scatter(
         x=x,
         y=y,
@@ -92,8 +93,8 @@ def create_plot(
     ))
 
 
-    for df_score, topic, topic_color in zip(list_of_topics, list_of_colors):
-        data = df_score[df_score["topic"] == topic]
+    for topic, topic_color in zip(list_of_topics, list_of_colors):
+        data = df_scores[df_scores["topic"] == topic.get_name()]
 
         x = data["timestamp"].values
         y = data[map_contract_to_score[ts_contract]].values
@@ -191,42 +192,34 @@ if __name__ == "__main__":
 
     df_score1 = topic_weather.calculate_scores(df)
     df_score2 = topic_gas_fuel.calculate_scores(df)
-    df_score = pd.concat([df_score1, df_score2]).sort_values("timestamp", ascending=False)
+    df_scores = pd.concat([df_score1, df_score2]).sort_values("timestamp", ascending=False)
 
 
     curves_power = read_curves_from_onedrive(f"data_historical_2024+", Keys.power_germany)
+    curves_power = extend_snapshot_days_to_today(curves_power)
 
-
-    # Extent curves to today to have the news median today:
-    columns = curves_power.columns
-    today = pd.Timestamp.today(tz=tz)
-    extended_trading_days = pd.bdate_range(columns[-1], today)
-    new_columns = columns.append(extended_trading_days).unique()
-    curves_power = curves_power.reindex(columns=new_columns)
 
 
     # Reduction for Monthlies
 
     contract_sample = "MS"
+
     df_prices_power = curves_power.resample(contract_sample).mean().T
-    df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_score, df_prices_power)
+
+    df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
 
 
 
+    # Plot datat for a single contract
+    ts_contract = pd.Timestamp(date(2026, 10, 1), tz=tz)
+
+    create_plot(ts_contract, df_prices_power, df_scores, df_contract_sentiment, map_contract_to_score,list_of_topics, list_of_colors)
 
 
 
+    print(df_scores)
     print(df_score1)
     print(df_score2)
-
-
-    # Plotly for later
-    ts_contract = pd.Timestamp(date(2026, 12, 1), tz=tz)
-
-    create_plot(ts_contract, df_prices_power, df_score, df_contract_sentiment, map_contract_to_score,list_of_topics, list_of_colors)
-
-
-
 
 
 

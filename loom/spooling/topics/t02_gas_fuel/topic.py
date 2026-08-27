@@ -13,6 +13,7 @@ from loom.spooling.source.universal_scraper import find_scraped_article_content
 
 
 class T02_Gas_Fuel(UniversalTopic):
+
     path_folder = Path(__file__).parent.resolve()
 
     def get_topic_keywords(self):
@@ -231,6 +232,7 @@ class T02_Gas_Fuel(UniversalTopic):
                 results.append(result)
                 results_meta.append({
                     "timestamp": timestamp,
+                    "topic": self.get_name(),
                     "title": title,
                     "uuid": uuid,
                     "url": url,

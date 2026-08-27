@@ -46,14 +46,14 @@ def ask_and_answer_for_uuid(scraper: UniversalScraper, topic: UniversalTopic, uu
 
     if check1 and check2:
         if not is_already_answered:
-            print(uuid, topic.get_topic(), ratio, is_already_answered, url)
+            print(uuid, topic.get_name(), ratio, is_already_answered, url)
 
         if use_ai:
             if is_already_answered:
                 return
 
-            print(uuid, topic.get_topic(), ratio, article_title)
-            print(f"{topic.get_topic()} - AI reviewing url: {url}")
+            print(uuid, topic.get_name(), ratio, article_title)
+            print(f"{topic.get_name()} - AI reviewing url: {url}")
 
             question = topic.get_topic_question(article_title, article_content)
             topic_answer = ask_claude(question, use_web_fetch=True)

@@ -32,6 +32,16 @@ def read_curves_from_onedrive(folder, key):
     return df
 
 
+def extend_snapshot_days_to_today(df_curves):
+    # Extent curves to today -> missing snapshot data is then empty
+    columns = df_curves.columns
+    today = pd.Timestamp.today(tz=tz)
+    extended_trading_days = pd.bdate_range(columns[-1], today)
+    new_columns = columns.append(extended_trading_days).unique()
+    df_curves = df_curves.reindex(columns=new_columns)
+    return df_curves
+
+
 
 if __name__ == "__main__":
 

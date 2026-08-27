@@ -7,7 +7,7 @@ class UniversalTopic():
 
     path_folder: Path = None
 
-    def get_topic(self):
+    def get_name(self):
         return self.path_folder.name
 
     def get_topic_keywords(self):

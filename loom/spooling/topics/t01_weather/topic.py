@@ -241,7 +241,7 @@ class T01_Weather(UniversalTopic):
                 results.append(result)
                 results_meta.append({
                     "timestamp": timestamp,
-                    "topic": self.get_topic(),
+                    "topic": self.get_name(),
                     "title": title,
                     "uuid": uuid,
                     "url": url,
