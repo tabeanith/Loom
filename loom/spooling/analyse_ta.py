@@ -273,7 +273,6 @@ if __name__ == "__main__":
     mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False)
 
 
-    # All monthlies, All quarterlies
 
     def run(contract_sampling, start_n_month_before_del, hours, mw_sizing):
         all_mtm = []
@@ -302,23 +301,21 @@ if __name__ == "__main__":
         return total_mtm, df_all_open_volume
 
 
+    # All monthlies, All quarterlies
 
 
     contract_sampling = "MS"
-    start_n_month_before_del = 4
+    start_n_month_before_del = 5
     hours = 24 * 30
     mw_sizing = 10
-
     total_mtm_months, df_all_open_volume_months = run(contract_sampling, start_n_month_before_del, hours, mw_sizing)
 
 
 
-
     contract_sampling = "QS"
-    start_n_month_before_del = 12
+    start_n_month_before_del = 9
     hours = 24 * 30 * 3
     mw_sizing = 3
-
     total_mtm_quarters, df_all_open_volume_quarters = run(contract_sampling, start_n_month_before_del, hours, mw_sizing)
 
 
