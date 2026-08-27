@@ -24,7 +24,7 @@ from loom.spooling.topics.t01_weather.topic import T01_Weather
 from loom.spooling.topics.t02_gas_fuel.topic import T02_Gas_Fuel
 
 from loom.data.keys import Keys
-from loom.data.curves.get import read_curves
+from loom.data.curves.get import read_curves_from_onedrive
 
 
 
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     df_score = pd.concat([df_score1, df_score2]).sort_values("timestamp", ascending=False)
 
 
-    curves_power = read_curves(f"data_historical_2024+", Keys.power_germany)
+    curves_power = read_curves_from_onedrive(f"data_historical_2024+", Keys.power_germany)
 
 
     # Extent curves to today to have the news median today:
@@ -359,7 +359,7 @@ if __name__ == "__main__":
     n_contracts = 5
     contract_sample = "MS"
 
-    mtm, open_volume, score_reduction = run_test(curves_power, contract_sample, ts_contract, ts_start_trading, n_contracts, force_close_delivery=False, show_plot=False)
+    mtm, open_volume, score_reduction = run_test(curves_power, contract_sample, ts_contract, ts_start_trading, n_contracts, force_close_delivery=False, show_plot=True)
     print(mtm.iloc[-1])
 
 
