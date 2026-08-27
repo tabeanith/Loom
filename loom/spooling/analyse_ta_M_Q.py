@@ -28,6 +28,8 @@ from loom.data.curves.get import read_curves_from_onedrive
 from loom.data.curves.get import extend_snapshot_days_to_today
 
 from loom.spooling.analyse_scores import calculate_sentiment_v1
+from loom.spooling.analyse_utils import calculate_mtm_from_buy_sell
+from loom.spooling.analyse_utils import calculate_mtm_from_open_position
 
 
 
@@ -35,25 +37,6 @@ pio.renderers.default = "browser"
 tz = "Europe/Berlin"
 
 
-
-def calculate_mtm_from_buy_sell(buy_dirac, sell_dirac, prices):
-    buy_dirac = buy_dirac.fillna(0).astype(int)  # Covert floats to integer
-    sell_dirac = sell_dirac.fillna(0).astype(int)  # Covert floats to integer
-
-    entries = (-buy_dirac * prices + sell_dirac * prices).cumsum()
-    open_volume = (buy_dirac - sell_dirac).cumsum()
-    exits = open_volume * prices
-    mtm = entries + exits
-    return mtm, open_volume
-
-
-def calculate_mtm_from_open_position(open_position_profile, prices):
-    change = open_position_profile.ffill().fillna(0).astype(int).diff()
-    change.fillna(open_position_profile, inplace=True)
-
-    buy_dirac = change.clip(lower=0)
-    sell_dirac = change.clip(upper=0) * -1
-    return calculate_mtm_from_buy_sell(buy_dirac, sell_dirac, prices)
 
 
 def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False):
@@ -321,8 +304,6 @@ if __name__ == "__main__":
 
 
 
-
-
     total_mtm_months.plot(color="orange", label="total_mtm_months")
     total_mtm_quarters.plot(color="blue", label="total_mtm_quarters")
     (total_mtm_months + total_mtm_quarters).plot(color="black", label="total_mtm_quarters")
@@ -333,51 +314,6 @@ if __name__ == "__main__":
     print_to_do(df_all_open_volume_months, prev_td)
     print_to_do(df_all_open_volume_quarters, prev_td)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    mtm_total = []
-    contract_sample = 'W-SUN'
-    hours = 24 * 7
-    n_contracts = 50
-
-    for ts_contract in pd.date_range(pd.Timestamp(date(2024, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz),
-                                     freq=contract_sample):
-        ts_start_trading = ts_contract - Day(14)
-        mtm, open_volume, score_reduction = run_test(curves_power, contract_sample, ts_contract, ts_start_trading, n_contracts, force_close_delivery=False, show_plot=False)
-        mtm_total.append(mtm * hours)
-    _mtm_total = pd.concat(mtm_total, axis=1).ffill(axis=0).fillna(0)
-    weeks = _mtm_total.sum(axis=1)
-    weeks.plot(color="black", label="weeks")
-    plt.legend()
-
-    ts_tradeday = None
-    ts_tradeday = pd.Timestamp(date.today(), tz=tz).floor("D") - Day(1)
-
-
-    print_to_do(M_all_open_volume, ts_tradeday)
-    print_to_do(Q_all_open_volume, ts_tradeday)
 
 
 
