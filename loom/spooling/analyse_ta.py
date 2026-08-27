@@ -159,7 +159,8 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
             # Start closing
             open_volume_tbc.loc[mask_last_trading_week] = position_target.values
     else:
-        print(f"not yet delivered, or sentiment data empty:", final_positions.empty, final_sentiment.empty)
+        print(f"Contract {ts_contract}: Too far away from delivery (or no sentiment avail)", final_positions.empty, final_sentiment.empty)
+
 
     # Recalculate buys and sells -- Either way the position is unchanged into delivery, or adjusted, but we have to calculate the pnl into delivery anyway
     open_volume_tbfin = open_volume_tbc.ffill().fillna(0)
@@ -203,6 +204,35 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
 
 
 
+def print_to_do(df_open_pos, ts_tradeday=None):
+    df_open_pos.index = pd.to_datetime(df_open_pos.index, utc=True).tz_convert(tz).floor("D")
+
+    if ts_tradeday is None:
+        ts_tradeday = pd.Timestamp(date.today(), tz=tz).floor("D")
+
+    print("Trade date:", ts_tradeday.date())
+    _df_open_pos = df_open_pos[df_open_pos.index <= ts_tradeday.floor("D")]
+
+    currentM = _df_open_pos.iloc[-1]
+    diffM = _df_open_pos.iloc[-1] - _df_open_pos.iloc[-2]
+    _diffM = diffM[diffM.index > ts_tradeday].iloc[0:6]
+    _currentM = currentM[_diffM.index]
+
+    _currentM.name = "Total Position ending td"
+    _diffM.name = "Traded in td"
+    stack = pd.concat([_currentM, _diffM], axis=1)
+
+    contracts = []
+    for ts in stack.index:
+        contract_str = f"{ts.year} {ts.month_name()} | M{ts.month} | Q{ts.quarter} "
+        contracts.append(contract_str)
+
+    stack.index = contracts
+    print(stack)
+
+
+
+
 
 
 if __name__ == "__main__":
@@ -236,7 +266,7 @@ if __name__ == "__main__":
     df_prices_power = curves_power.resample(contract_sample).mean().T
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
 
-    ts_contract = pd.Timestamp(date(2026, 12, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 10, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(4)
     mw_sizing = 5
 
@@ -296,12 +326,34 @@ if __name__ == "__main__":
 
 
 
-
-
-
     total_mtm_months.plot(color="orange", label="total_mtm_months")
     total_mtm_quarters.plot(color="blue", label="total_mtm_quarters")
     (total_mtm_months + total_mtm_quarters).plot(color="black", label="total_mtm_quarters")
+
+
+
+    prev_td = pd.Timestamp.now(tz=tz).floor("D") - BDay(1)
+    print_to_do(df_all_open_volume_months, prev_td)
+    print_to_do(df_all_open_volume_quarters, prev_td)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -329,60 +381,6 @@ if __name__ == "__main__":
 
     print_to_do(M_all_open_volume, ts_tradeday)
     print_to_do(Q_all_open_volume, ts_tradeday)
-
-
-
-    def print_to_do(df_open_pos, ts_tradeday=None):
-        df_open_pos.index = pd.to_datetime(df_open_pos.index, utc=True).tz_convert(tz).floor("D")
-
-        if ts_tradeday is None:
-            ts_tradeday = pd.Timestamp(date.today(), tz=tz).floor("D")
-
-        print("Trade date:", ts_tradeday.date())
-        _df_open_pos = df_open_pos[df_open_pos.index <= ts_tradeday.floor("D")]
-
-        currentM = _df_open_pos.iloc[-1]
-        diffM = _df_open_pos.iloc[-1] - _df_open_pos.iloc[-2]
-        _diffM = diffM[diffM.index > ts_tradeday].iloc[0:6]
-        _currentM = currentM[_diffM.index]
-
-        _currentM.name = "Total Position today"
-        _diffM.name = "Traded today"
-        stack = pd.concat([_currentM, _diffM], axis=1)
-
-        contracts = []
-        for ts in stack.index:
-            contract_str = f"{ts.year} {ts.month_name()} | M{ts.month} | Q{ts.quarter} "
-            contracts.append(contract_str)
-
-        stack.index = contracts
-
-        print(stack)
-
-
-
-
-
-
-
-
-
-
-
-
-
-    print(df_score1)
-    print(df_score2)
-    ts_contract = pd.Timestamp(date(2026, 9, 1), tz=tz)
-    ts_start_trading = ts_contract - MonthBegin(4)
-    n_contracts = 5
-    contract_sample = "MS"
-    mtm, open_volume, score_reduction = run_test(curves_power, contract_sample, ts_contract, ts_start_trading, n_contracts, force_close_delivery=False, show_plot=False)
-
-
-    # Plotly is for later
-    prices_power = curves_power.resample(contract_sample).mean().T[ts_contract]
-    create_plot([df_score1, df_score2], [topic_weather, topic_gas_fuel], ["blue", "orange"], prices_power, score_reduction,  ts_contract)
 
 
 
