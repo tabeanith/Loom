@@ -37,11 +37,12 @@ tz = "Europe/Berlin"
 
 
 
-def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_mwh_residual, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False):
+def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_mwh_residual, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False):
     n_contracts = max(1, mw_sizing)
 
     # ---------------------- Get prices and sentiment -----------------------------
     prices_power = df_prices_power[ts_contract]
+    mwh_residual = df_mwh_residual[ts_contract]
     idx_sentiment = df_contract_sentiment[ts_contract]
 
     mask1 = prices_power.index.date >= ts_start_trading.date()
@@ -50,27 +51,35 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power
 
 
     # ------------------------- Trading price structure -----------------------------------
-    upper = (prices_power.rolling(7).quantile(0.75))
-    middle = (prices_power.rolling(7).quantile(0.5))
-    lower = (prices_power.rolling(7).quantile(0.27))
+    upper = (prices_power.rolling(14).quantile(0.9))
+    middle = (prices_power.rolling(14).quantile(0.5))
+    lower = (prices_power.rolling(14).quantile(0.1))
 
+    mwh_upper = (mwh_residual.rolling(14).quantile(0.75))
+    mwh_middle = (mwh_residual.rolling(14).quantile(0.5))
+    mwh_lower = (mwh_residual.rolling(14).quantile(0.25))
 
     # ------------------------------------- Trading -----------------------------------
     # Normal selling and buying
-    buys = (prices_power < lower).astype(int) * n_contracts
-    sells = (prices_power > upper).astype(int) * n_contracts
+    mwh_middle_diff = mwh_middle.diff()
+
+    # Normal selling and buying
+    p_buys = (prices_power < lower).astype(int) * n_contracts
+    p_sells = (prices_power > upper).astype(int) * n_contracts
+
+    r_sells = (mwh_residual < mwh_lower).astype(int) * n_contracts
+    #r_buys = 0
+    r_buys = (mwh_residual > mwh_upper).astype(int) * n_contracts
+    #r_sells = 0
 
     # TODO: Bull run on sentiment. Implement the same for bear run
 
-    past = (prices_power > upper).astype(int).rolling(7).mean() > 0.75
-    sellsingular = (prices_power < middle)
-    sellX = (past & sellsingular).astype(int) * 6 * n_contracts
-
-    buyX = (prices_power < middle).astype(int) * 3 * n_contracts
-
     # From buys and sells, weight them based on sentinemt:
-    scaled_buy = buys * (1. - idx_sentiment/100.) + buyX * (idx_sentiment/100.)
-    scaled_sell = sells * (1. - idx_sentiment/100.) + sellX * (idx_sentiment/100.)
+    #scaled_buy = buys * (1. + idx_sentiment/100.) #+ buyX * (idx_sentiment/100.)
+    #scaled_sell = sells * (1. - idx_sentiment/100.) #+ sellX * (idx_sentiment/100.)
+    # From buys and sells, weight them based on sentinemt:
+    scaled_buy = (p_buys + r_buys)  * (1. + idx_sentiment/100.)
+    scaled_sell = (p_sells + r_sells)  * (1. - idx_sentiment/100.)
 
     scaled_buy = scaled_buy[mask_trading]
     scaled_sell = scaled_sell[mask_trading]
@@ -226,6 +235,7 @@ if __name__ == "__main__":
     contract_sampling = "W-SUN"  # NOTE: The bins is the label for the Weekly (the Sunday of the Week)
     df_prices_power = curves_power.resample(contract_sampling).mean().T
     df_mwh_residual = curves_residual.resample(contract_sampling).sum().T
+    df_mwh_residual = df_mwh_residual.reindex(index=df_prices_power.index, columns=df_prices_power.columns)
 
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
 
@@ -234,7 +244,7 @@ if __name__ == "__main__":
     mw_sizing = 5
 
 
-    mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_mwh_residual, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=True)
+    mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_mwh_residual, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False)
 
 
 
@@ -244,10 +254,10 @@ if __name__ == "__main__":
         all_mtm = []
         all_open_volume = []
 
-        for ts_contract in pd.date_range(pd.Timestamp(date(2025, 1, 1), tz=tz), pd.Timestamp(date(2027, 1, 1), tz=tz), freq=contract_sampling):
-            ts_start_trading = ts_contract - Day(14)
+        for ts_contract in pd.date_range(pd.Timestamp(date(2024, 1, 1), tz=tz), pd.Timestamp(date(2027, 1, 1), tz=tz), freq=contract_sampling):
+            ts_start_trading = ts_contract - BDay(10)
 
-            mtm, open_volume = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power,
+            mtm, open_volume = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power,df_mwh_residual,
                                              df_contract_sentiment, df_scores, map_contract_to_score,
                                              force_close_delivery=False, show_plot=False)
             all_mtm.append(mtm * hours)

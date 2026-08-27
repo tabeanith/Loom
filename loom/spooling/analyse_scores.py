@@ -156,7 +156,8 @@ def calculate_sentiment_v1(df_score, df_out_idx):
 
             for ts in reduction.index:
                 ts_from = ts.floor("D") - Day(7)
-                ts_to = ts.floor("D") + Hour(16)
+                # TODO: 16 Uhr is snapshot time, but earlier doesnt make a huge difference
+                ts_to = ts.floor("D") + Hour(10)
                 __df_score = _df_score[(_df_score.index >= ts_from) & (_df_score.index <= ts_to)]
                 __medianmed = __df_score.median()
                 __median1 = __df_score.quantile(0.9)
