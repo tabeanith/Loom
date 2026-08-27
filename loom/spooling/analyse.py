@@ -266,7 +266,6 @@ if __name__ == "__main__":
         mtm2 = mtm
 
         if len(open_volume) > 0:
-        #if False:
             bounded_volume = pd.Series(index=open_volume.index, data=0.)
             open_volume_change = open_volume.diff()
             open_volume_change.iloc[0] = open_volume.iloc[0]
@@ -403,7 +402,7 @@ if __name__ == "__main__":
     hours = 24 * 30
     n_contracts = 10
 
-    for ts_contract in pd.date_range(pd.Timestamp(date(2026, 1, 1), tz=tz), pd.Timestamp(date(2027, 3, 1), tz=tz),
+    for ts_contract in pd.date_range(pd.Timestamp(date(2026, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz),
                                      freq=contract_sample):
         ts_start_trading = ts_contract - MonthBegin(4)
         mtm, open_volume, score_reduction = run_test(curves_power, contract_sample, ts_contract, ts_start_trading, n_contracts, force_close_delivery=False, show_plot=False)
@@ -440,7 +439,7 @@ if __name__ == "__main__":
     hours = 24 * 7
     n_contracts = 50
 
-    for ts_contract in pd.date_range(pd.Timestamp(date(2024, 1, 1), tz=tz), pd.Timestamp(date(2027, 3, 1), tz=tz),
+    for ts_contract in pd.date_range(pd.Timestamp(date(2024, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz),
                                      freq=contract_sample):
         ts_start_trading = ts_contract - Day(14)
         mtm, open_volume, score_reduction = run_test(curves_power, contract_sample, ts_contract, ts_start_trading, n_contracts, force_close_delivery=False, show_plot=False)
