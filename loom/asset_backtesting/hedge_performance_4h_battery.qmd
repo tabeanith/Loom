@@ -1,0 +1,279 @@
+---
+title: "Backtested Dynamic Delta Hedging for 4h-batteries"
+subtitle: "Realized performance since Jan 1st 2024 + Comparison to standard turbine"
+author: "l.christ@enbw.com"
+date: "2026-05-19"
+format:
+   html:
+       toc: true
+       toc-location: right # or left
+       toc-depth: 3
+       code-fold: true
+       code-summary: "Show the code"
+       theme: flatly
+       embed-resources: true
+execute:
+   freeze: false
+   daemon: 0
+---
+
+
+# What is this?
+
+
+This is a backtest to address the following question: How much value could be extracted _potentially_ by running a naive 
+dynamic Delta hedging strategy in the Futures/Forward market based off the underlying being a 4h-battery?
+
+Technically this is a forward-looking question. But it can be insightful to look at past performance to understand feasibility and shortcomings.
+The same backtests are applied to a battery and a turbine, so we can compare both for plausibility and to see differences.
+
+
+# What it is not
+
+Results are past values, not forward-looking.
+
+This strategy does not concern itself with the spot delivery (Day Ahead market). It plays out only in the Futures/Forward market and is technically closing before delivery.
+
+For the delivery some static hedge or finalized hedge position has to be established.
+That requires a separate study or strategy.
+
+Equally, Intraday optimization is a separate activity. We assume no interface with Intraday activities, meaning no unplanned drift in storage start levels (caused by intraday realization deviating from plan)
+
+
+```{python}
+#| echo: false
+
+import sys
+import os
+
+# Get the absolute path to this project directory, so Quarto can find it
+project_path1 = os.path.abspath("/ws/Aleph")
+sys.path.append(project_path1)
+
+# Ignore warning, otherwise Quarto prints them out
+import warnings
+warnings.filterwarnings("ignore")
+
+
+import pulp
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from pandas.tseries.offsets import Day, MonthBegin, Week, Hour
+
+from hedge_products import generate_day_products
+from hedge_products import generate_weekend_products
+from hedge_products import generate_week_products
+from hedge_products import generate_month_products
+from hedge_products import generate_quarter_products
+
+
+from aleph.power_backtesting.data.historical import get_price_curves_and_insert_spot_results, fix_snapshot_curves
+from aleph.power_backtesting.data.historical import get_schedules_and_valuation_curves_from_filer
+
+from aleph.power_backtesting.optimizer import Battery_Colocated
+from aleph.power_backtesting.optimizer import Battery
+from aleph.power_backtesting.optimizer import Turbine
+from aleph.power_backtesting.optimizer import create_view_on_contract_prices_and_positions
+from aleph.power_backtesting.optimizer import calculate_hedge_volumes
+from aleph.power_backtesting.optimizer import check_statistics
+from aleph.power_backtesting.optimizer import calculate_delta_hedging_pnl___only_base
+from aleph.power_backtesting.optimizer import calculate_delta_hedging_pnl___base_onpeak_split
+from aleph.power_backtesting.optimizer import calculate_intrinsic_and_evaluate
+from aleph.power_backtesting.optimizer import plot_prices
+from aleph.power_backtesting.optimizer import plot_schedules
+from aleph.power_backtesting.optimizer import fix_snapshot_curves
+
+tz = "Europe/Berlin"
+```
+
+
+# Asset model
+
+For the battery we assume a 4h-charge model.
+
+The first version is modeled with fully flexible charging, no co-location restriction. The second version is modeled to only feed into the market, while charging is determined by a solar forecast profile. The solar profile is simulated by a generic shape (maximum at 1 pm) scaled with yearly seasonality.
+
+
+
+For the turbine we assume fixed fuel costs, meaning price risk is only exposed to Power markets. (For a gas turbine
+the fuel costs would naturally create exposure to the gas market)
+
+These are optimized with an open-source optimizer, not with AOP \
+Optimizer package PuLP [https://coin-or.github.io/pulp/](https://coin-or.github.io/pulp/)
+
+```{python}
+asset_battery = Battery(
+    max_produce_mw=64,
+    max_storage_mwh=255,
+    efficiency=0.85,
+)
+
+asset_battery_colocated = Battery_Colocated(
+    max_produce_mw=64,
+    max_storage_mwh=255,
+    efficiency=0.85,
+)
+
+asset_turbine = Turbine(
+    max_produce_mw=64,
+    strike=120,  # This turbine has "fuel costs" fixed at strike level in EUR/MWh
+)
+```
+
+
+```{python}
+#| echo: false
+
+# ---------------------- Get historical prices -----------------------------
+spot_curve, price_curves = get_price_curves_and_insert_spot_results("data/power_germany_snapshot_2024+.csv.gz")
+price_curves = fix_snapshot_curves(price_curves)
+
+data_asset_battery = {}
+data_asset_turbine = {}
+data_asset_battery_colocated = {}
+
+data_asset_battery["asset"] = asset_battery
+data_asset_battery["spot_curve"] = spot_curve
+data_asset_battery["price_curves"] = price_curves
+
+data_asset_turbine["asset"] = asset_turbine
+data_asset_turbine["spot_curve"] = spot_curve
+data_asset_turbine["price_curves"] = price_curves
+
+data_asset_battery_colocated["asset"] = asset_battery_colocated
+data_asset_battery_colocated["spot_curve"] = spot_curve
+data_asset_battery_colocated["price_curves"] = price_curves
+
+get_schedules_and_valuation_curves_from_filer(data_asset_turbine)
+get_schedules_and_valuation_curves_from_filer(data_asset_battery)
+get_schedules_and_valuation_curves_from_filer(data_asset_battery_colocated)
+
+
+# ----------------- Create contract prices --------------------------
+create_view_on_contract_prices_and_positions(data_asset_battery)
+create_view_on_contract_prices_and_positions(data_asset_turbine)
+create_view_on_contract_prices_and_positions(data_asset_battery_colocated)
+
+# ----------------- Calculate Hedge Volumes --------------------------
+calculate_hedge_volumes(data_asset_battery)
+calculate_hedge_volumes(data_asset_turbine)
+calculate_hedge_volumes(data_asset_battery_colocated)
+
+
+```
+
+
+# Power Future Contracts
+
+For contract prices the data is based off EoD snapshot curves created daily around 4pm.
+
+The optimization start with observations from 1st January 2024 until now (8th May 2026). Accordingly, 
+dynamic Delta hedging starts at 1st January 2024 and picks up the next Future contracts as they become available.
+
+Market liquidity is limiting this strategy, therefore we stay in the following bounds:
+
+**D**: Next 3 front days, Base/Peak/Offpeak \
+**W**: Next 3 front weeks, Base/Peak/Offpeak \
+**M**: Next 3 front months, Base/Peak/Offpeak \
+**Q**: Next 3 front quarters, Base/Peak/Offpeak 
+
+While contract size starts at 1MW, we assume smaller decimal values are possible for the sake of rescaling results to any asset size.
+
+
+Visualization of contract prices:
+
+```{python}
+#| echo: false
+
+plot_prices(data_asset_battery)
+```
+
+Visualization of optimization results:
+```{python}
+#| echo: false
+
+plot_schedules(data_asset_turbine)
+plot_schedules(data_asset_battery)
+plot_schedules(data_asset_battery_colocated)
+```
+
+
+# Results: Correlation of Delta x Price
+
+From daily asset optimizations we can calculate the daily asset Delta positions. Each day there are changes to the market prices 
+that can _potentially_ change the Delta positions. A naive dynamic Delta hedge is trading away the Delta-change in the market.
+
+If the asset has positive correlations between Delta-change and price-change, the asset has positive Gamma. 
+In that case Dynamic Delta Hedging results in a "buy at lower, sell at higher" trading pattern. Over enough time this pattern tends to accumulate positive PnL and converges towards the realized extrinsic value of the asset. (The realized Extrinsic is determined by realized market volatility, which can be very different from forward-looking market volatility)
+
+If the correlations are close to zero, there is no significant statistical relationship that would result in cumulating any PnL over time (positive or negative).
+
+See below the correlations observed for both assets, per contract family:
+
+```{python}
+#| echo: false
+#| column: page
+
+check_statistics(data_asset_turbine)
+check_statistics(data_asset_battery)
+check_statistics(data_asset_battery_colocated)
+```
+
+For the battery only Offpeak contracts show some positive correlation. This could be picked up by Delta hedging with Base and Peak contracts to synthesize Offpeak contracts (1MW Base - 1MW Peak = 1MW Offpeak)
+
+There are a few effects that bring down the correlations for batteries:
+
+*   The optimized schedules (=Delta positions) rarely change. The battery tends to run its charge/discharge cycle each day no matter the overall average price level
+*   Fundamentals can dislocate average price moves from the hourly spreads inside some contract. Examples:
+    * Zero solar production increases avg price level. But low hourly spread turns the battery dormant, Delta position decreases
+    * More wind production decreases avg price level. But strong wind/price flank shaping can activate the battery, Delta position increases
+
+As we approach delivery, the fundamentals tend to bring more noisy changes to the hourly price curve at the very front.
+
+# Results: Hedge performance for hedging Base positions
+
+This strategy only trades with Base contracts.
+
+Below is the performance based on each asset. To the left there are moderate transaction costs (representing Bid/Ask, slippage, fees, bad entries on low liquidity).
+
+To the right some higher transaction costs are considered. Note that a naive execution would likely result in even higher costs. Trading these contracts would require some liquidity monitoring and detecting liquid entry windows.
+
+```{python}
+#| echo: false
+#| column: page
+
+calculate_delta_hedging_pnl___only_base(data_asset_turbine)
+calculate_delta_hedging_pnl___only_base(data_asset_battery)
+calculate_delta_hedging_pnl___only_base(data_asset_battery_colocated)
+```
+
+
+# Results: Hedge performance for hedging Peak and Offpeak positions
+
+This strategy trades with Base and Peak contracts, but recalculates the volumes to match the Peak and Offpeak Delta-changes. Also called "Base OnPeak" method.
+
+Note that the transaction costs of Peak contracts can be much higher, they are regularly limited in liquidity.
+
+
+```{python}
+#| echo: false
+#| column: page
+
+calculate_delta_hedging_pnl___base_onpeak_split(data_asset_turbine)
+calculate_delta_hedging_pnl___base_onpeak_split(data_asset_battery)
+calculate_delta_hedging_pnl___base_onpeak_split(data_asset_battery_colocated)
+```
+
+
+# Results: Tabular overview
+
+Results from running from 1st January 2024 until 8th May 2026:
+
+```{python}
+#| echo: false
+#| column: page
+
+calculate_intrinsic_and_evaluate([data_asset_turbine, data_asset_battery, data_asset_battery_colocated])
+```
+

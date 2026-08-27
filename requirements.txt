@@ -1,0 +1,16 @@
+pandas
+numpy
+plotly
+matplotlib
+scipy
+zeep
+numba
+pywin32
+pygetwindow
+pytest
+pytest_mock
+xlwings
+playwright
+anthropic
+
+

@@ -1,0 +1,1 @@
+quarto render aleph/power_backtesting/hedge_performance_4h_battery.qmd --no-cache
