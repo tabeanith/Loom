@@ -40,9 +40,9 @@ def ask_and_answer_for_uuid(scraper: UniversalScraper, topic: UniversalTopic, uu
     ratio = n_keywords / n_words
 
     check1 = n_words > 100
-    check2 = ratio > 0.05  # This is quite tight
-    #print(uuid, topic.get_topic(), ratio, is_already_answered, url)
+    check2 = ratio > 0.05  # Weed out some less relevant articles, dont evaluate every noise
 
+    #print(uuid, topic.get_topic(), ratio, is_already_answered, url)
 
     if check1 and check2:
         if not is_already_answered:
