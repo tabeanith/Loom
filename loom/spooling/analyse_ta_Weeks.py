@@ -208,28 +208,39 @@ if __name__ == "__main__":
     curves_power = extend_snapshot_days_to_today(curves_power)
 
 
-    # Reduction for Monthlies --- TESTING
+    curves_residual = read_curves_from_onedrive(f"data_historical_2024+", Keys.residual_load_ec00ops)
+    curves_residual = extend_snapshot_days_to_today(curves_residual)
 
-    contract_sample = "MS"
-    df_prices_power = curves_power.resample(contract_sample).mean().T
+
+    # Reduction for Weeklies --- TESTING
+
+    contract_sampling = "W-SUN"
+    df_prices_power = curves_power.resample(contract_sampling).mean().T
+    df_mwh_residual = curves_residual.resample(contract_sampling).sum().T
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
 
-    ts_contract = pd.Timestamp(date(2026, 10, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 7, 12), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(4)
     mw_sizing = 5
 
+    df_mwh_residual[ts_contract]
+
     mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False)
 
+
+
+
+
+    contract_sampling = "W-SUN"
+    df_prices_power = curves_power.resample(contract_sampling).mean().T
+    df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
 
 
     def run(contract_sampling, hours, mw_sizing):
         all_mtm = []
         all_open_volume = []
 
-        df_prices_power = curves_power.resample(contract_sampling).mean().T
-        df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
-
-        for ts_contract in pd.date_range(pd.Timestamp(date(2026, 6, 1), tz=tz), pd.Timestamp(date(2027, 1, 1), tz=tz), freq=contract_sampling):
+        for ts_contract in pd.date_range(pd.Timestamp(date(2025, 1, 1), tz=tz), pd.Timestamp(date(2027, 1, 1), tz=tz), freq=contract_sampling):
             ts_start_trading = ts_contract - Day(14)
 
             mtm, open_volume = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power,
@@ -251,8 +262,6 @@ if __name__ == "__main__":
 
     # All Weeklies
 
-
-    contract_sampling = "W-SUN"
     hours = 24 * 7
     mw_sizing = 25
     total_mtm_weeks, df_all_open_volume_weeks = run(contract_sampling, hours, mw_sizing)
