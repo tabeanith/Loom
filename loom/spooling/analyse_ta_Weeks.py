@@ -37,7 +37,7 @@ tz = "Europe/Berlin"
 
 
 
-def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False):
+def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_power, df_contract_sentiment, df_mwh_residual, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False):
     n_contracts = max(1, mw_sizing)
 
     # ---------------------- Get prices and sentiment -----------------------------
@@ -208,32 +208,35 @@ if __name__ == "__main__":
     curves_power = extend_snapshot_days_to_today(curves_power)
 
 
-    curves_residual = read_curves_from_onedrive(f"data_historical_2024+", Keys.residual_load_ec00ops)
+    # Merge LT und ST Residual Forecasts
+    curves_residual_ec00ops = read_curves_from_onedrive(f"data_historical_2024+", Keys.residual_load_ec00ops)
+    curves_residual_ec00ops = extend_snapshot_days_to_today(curves_residual_ec00ops)
+
+    curves_residual = read_curves_from_onedrive(f"data_historical_2024+", Keys.residual_load_ec46)
     curves_residual = extend_snapshot_days_to_today(curves_residual)
+    # In place updating (can lead to a jump from model1 to model2)
+    curves_residual.update(curves_residual_ec00ops)
+
+
 
 
     # Reduction for Weeklies --- TESTING
 
-    contract_sampling = "W-SUN"
+    contract_sampling = "W-SUN"  # NOTE: The bins is the label for the Weekly (the Sunday of the Week)
     df_prices_power = curves_power.resample(contract_sampling).mean().T
     df_mwh_residual = curves_residual.resample(contract_sampling).sum().T
+
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
 
-    ts_contract = pd.Timestamp(date(2026, 7, 12), tz=tz)
-    ts_start_trading = ts_contract - MonthBegin(4)
+    ts_contract = pd.Timestamp(date(2026, 8, 16), tz=tz)
+    ts_start_trading = ts_contract - Day(14)
     mw_sizing = 5
 
-    df_mwh_residual[ts_contract]
 
-    mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False)
-
+    mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_mwh_residual, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=True)
 
 
 
-
-    contract_sampling = "W-SUN"
-    df_prices_power = curves_power.resample(contract_sampling).mean().T
-    df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
 
 
     def run(contract_sampling, hours, mw_sizing):
