@@ -20,8 +20,12 @@ pd.set_option('display.max_colwidth', None)
 
 from loom.spooling.source.references import load_references
 
-from loom.spooling.topics.t01_weather.topic import T01_Weather
-from loom.spooling.topics.t02_gas_fuel.topic import T02_Gas_Fuel
+from loom.spooling.topics.t01_eu_power.topic import T01_EU_Power
+from loom.spooling.topics.t02_weather.topic import T02_Weather
+from loom.spooling.topics.t03_gas_fuel.topic import T03_Gas_Fuel
+from loom.spooling.topics.t11_us_stocks.topic import T11_US_Stocks
+
+from loom.spooling.source.reuters.run import Reuters
 
 from loom.data.keys import Keys
 from loom.data.curves.get import read_curves_from_onedrive
@@ -140,14 +144,15 @@ def create_plot(
 
 
 
-def calculate_sentiment_v1(df_score, df_out_idx):
+def calculate_sentiment_vn(df_score, df_out_idx, lookback_days):
     # ---------------------- Get sentiment scoring -----------------------------
     df_contract_sentiment = pd.DataFrame(index=df_out_idx.index, columns=df_out_idx.columns)
     map_contract_to_score = {}
+    relevance = df_score["relevance"]
 
     for ts_contract in df_out_idx.columns:
         # For the sentiment, always look to the next closest contract (relevant for Weeklies, doesnt affect Months and Quarters. Quarters will look at their first month inside)
-        ts_ahead = (ts_contract + Day(6))
+        ts_ahead = (ts_contract + Day(7))
         _ts_contract_for_sentiment = pd.Timestamp(date(ts_ahead.year, ts_ahead.month, 1), tz=tz)
 
         if _ts_contract_for_sentiment in df_score.columns:
@@ -155,15 +160,16 @@ def calculate_sentiment_v1(df_score, df_out_idx):
             reduction = pd.Series(index=df_out_idx.index, data=np.nan)
 
             for ts in reduction.index:
-                ts_from = ts.floor("D") - Day(7)
+                ts_from = ts.floor("D") - Day(lookback_days)
                 # TODO: 16 Uhr is snapshot time, but earlier doesnt make a huge difference
                 ts_to = ts.floor("D") + Hour(10)
-                __df_score = _df_score[(_df_score.index >= ts_from) & (_df_score.index <= ts_to)]
-                __medianmed = __df_score.median()
-                __median1 = __df_score.quantile(0.9)
-                __median3 = __df_score.quantile(0.1)
-
-                reduction.loc[ts] = (0.333 * __medianmed + 0.333 * __median1 + 0.333 * __median3)
+                mask = (_df_score.index >= ts_from) & (_df_score.index <= ts_to)
+                __df_score = _df_score[mask]
+                __relevance = relevance[mask]
+                _s = (__df_score * __relevance).sum()
+                _r = __relevance.sum()
+                if _r > 0:
+                    reduction.loc[ts] = (__df_score * __relevance).sum() / __relevance.sum()
 
             df_contract_sentiment[ts_contract] = reduction
             map_contract_to_score[ts_contract] = _ts_contract_for_sentiment
@@ -172,6 +178,27 @@ def calculate_sentiment_v1(df_score, df_out_idx):
 
     return df_contract_sentiment, map_contract_to_score
 
+
+
+def calculate_sentiment_v1(df_score, lookback_days):
+    # ---------------------- Get sentiment scoring -----------------------------
+    sentiment = pd.Series(index=df_score.index, data=np.nan)
+    scores = df_score["score"]
+    relevance = df_score["relevance"]
+
+    # For the sentiment, always look to the next closest contract (relevant for Weeklies, doesnt affect Months and Quarters. Quarters will look at their first month inside)
+
+    for ts in sentiment.index:
+        ts_from = ts.floor("D") - Day(lookback_days)
+        ts_to = ts
+        mask = (scores.index >= ts_from) & (scores.index <= ts_to)
+        __score = scores[mask]
+        __relevance = relevance[mask]
+        __medianmed = (__score * __relevance).sum() / __relevance.sum()
+        sentiment.loc[ts] = __medianmed
+
+    sentiment = sentiment.fillna(0)
+    return sentiment
 
 
 
@@ -185,20 +212,28 @@ if __name__ == "__main__":
     df = pd.concat([df1, df2, df3])
     df = df.sort_values("timestamp", ascending=False)
 
-    topic_weather = T01_Weather()
-    topic_gas_fuel = T02_Gas_Fuel()
+    topic_eu = T01_EU_Power()
+    topic_weather = T02_Weather()
+    topic_gas_fuel = T03_Gas_Fuel()
+
 
     list_of_topics = [topic_weather, topic_gas_fuel]
     list_of_colors = ["blue", "orange"]
 
+    #df_score0 = topic_eu.calculate_scores(df)
     df_score1 = topic_weather.calculate_scores(df)
     df_score2 = topic_gas_fuel.calculate_scores(df)
+
+    #for col in df_score1.columns:
+    #    if isinstance(col, pd.Timestamp):
+    #        df_score0[col] = df_score0["score"]
+
+
     df_scores = pd.concat([df_score1, df_score2]).sort_values("timestamp", ascending=False)
 
 
     curves_power = read_curves_from_onedrive(f"data_historical_2024+", Keys.power_germany)
     curves_power = extend_snapshot_days_to_today(curves_power)
-
 
 
     # Reduction for Monthlies
@@ -207,12 +242,13 @@ if __name__ == "__main__":
 
     df_prices_power = curves_power.resample(contract_sample).mean().T
 
-    df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
+
+    df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, 7)
 
 
 
     # Plot datat for a single contract
-    ts_contract = pd.Timestamp(date(2026, 10, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2027, 1, 1), tz=tz)
 
     create_plot(ts_contract, df_prices_power, df_scores, df_contract_sentiment, map_contract_to_score,list_of_topics, list_of_colors)
 
@@ -223,6 +259,9 @@ if __name__ == "__main__":
     print(df_score2)
 
 
+
+    uuid = "40fa1342-a1d7-5655-b761-3ca6476c0970"
+    txt = T03_Gas_Fuel().load_llm_answer(uuid)
 
 
 

@@ -10,6 +10,8 @@ from loom.spooling.source.references import update_references
 from loom.spooling.source.references import load_references
 from loom.spooling.source.references import save_references
 
+from loom.util.text import count_words, count_keywords
+
 pd.set_option('display.max_rows', 10000)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 10000)
@@ -88,19 +90,6 @@ class UniversalScraper(object):
         raise NotImplemented
 
 
-    def count_keywords(self, content: str, list_of_keywords: list):
-        if content is None: return 0
-        count = sum(content.count(key) for key in list_of_keywords)
-        return count
-
-
-    def count_words(self, content: str):
-        if content is None: return 0
-        if content == "": return 0
-        count = len(content.split())
-        return count
-
-
     def get_scraped_article_content(self, uuid: str):
         data = self.get_scrap(uuid)
         return data.get("text", "")
@@ -131,7 +120,7 @@ class UniversalScraper(object):
             timestamp = row["timestamp"]
             text = self.get_scraped_article_content(uuid)
 
-            check1 = self.count_words(text) < 10
+            check1 = count_words(text) < 10
             check2 = len(title.replace(" ", "")) < 10
             check3 = pd.isnull(timestamp)
             check4 = len(url) < 10

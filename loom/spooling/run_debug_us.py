@@ -1,0 +1,59 @@
+
+from loom.spooling.source.severe_weather_europe.run import SevereWeatherEurope
+from loom.spooling.source.theguardian.run import TheGuardian
+from loom.spooling.source.reuters.run import Reuters
+
+from loom.spooling.topics.t01_eu_power.topic import T01_EU_Power
+from loom.spooling.topics.t02_weather.topic import T02_Weather
+from loom.spooling.topics.t03_gas_fuel.topic import T03_Gas_Fuel
+from loom.spooling.topics.t11_us_stocks.topic import T11_US_Stocks
+
+from loom.spooling.llm.ask_and_answer import ask_and_answer
+from loom.spooling.llm.ask_and_answer import ask_and_answer_for_uuid
+
+from loom.spooling.source.references import load_references
+from loom.spooling.analyse_scores import calculate_sentiment_v1
+
+import pandas as pd
+import numpy as np
+from pandas.tseries.offsets import Day
+tz = "Europe/Berlin"
+
+from matplotlib import pyplot as plt
+
+
+
+
+
+
+
+if __name__ == "__main__":
+
+    topic = T11_US_Stocks()
+    scraper = Reuters()
+
+    # For debugging only
+    if True:
+        uuid = "fb856271-5499-5b06-95c8-52c51da0728b"
+        ask_and_answer_for_uuid(topic, uuid=uuid, use_ai=True)
+        txt = topic.load_llm_answer(uuid)
+        print(txt)
+        df_ref = load_references(scraper.get_folder())
+        df_result = topic.calculate_scores(df_ref)
+
+
+        sentiment = calculate_sentiment_v1(df_result, 5)
+
+
+        fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
+        scores = df_result["score"]
+
+
+        ax2.scatter(x=scores.index, y=scores.values, label="scores", marker='o', linestyle='None')
+        ax2.stem(scores.index, scores.values)
+        sentiment.plot(ax=ax2, label="sentiment", color="red")
+
+        plt.legend()
+        plt.show()
+
+

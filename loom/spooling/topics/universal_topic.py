@@ -10,16 +10,19 @@ class UniversalTopic():
     def get_name(self):
         return self.path_folder.name
 
-    def get_topic_keywords(self):
+    def get_content_keywords(self):
         raise NotImplementedError()
 
-    def get_topic_question(self, article_title: str, article_content: str):
+    def get_llm_system(self):
+        raise NotImplementedError()
+
+    def get_llm_question(self, article_title: str, article_content: str):
         raise NotImplementedError()
 
     def calculate_scores(self, df):
         raise NotImplementedError()
 
-    def save_topic_answer(self, uuid: str, topic_answer: str):
+    def save_llm_answer(self, uuid: str, topic_answer: str):
         file_path = self.path_folder / "answers" / f"{uuid}.json"
 
         data = {
@@ -30,7 +33,7 @@ class UniversalTopic():
             json.dump(data, f)
 
 
-    def load_topic_answer(self, uuid: str):
+    def load_llm_answer(self, uuid: str):
         file_path = self.path_folder / "answers" / f"{uuid}.json"
 
         if self.check_if_topic_already_answered(uuid):

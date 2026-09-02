@@ -28,6 +28,7 @@ class Reuters(UniversalScraper):
     url_main = "https://www.reuters.com"
 
     sub_pages = [
+        # Energy markets
         "https://www.reuters.com/authors/ron-bousso/",
         "https://www.reuters.com/authors/gavin-maguire/",
         "https://www.reuters.com/authors/mike-dolan/",
@@ -39,6 +40,15 @@ class Reuters(UniversalScraper):
         "https://www.reuters.com/authors/nina-chestney/",
         "https://www.reuters.com/business/energy",
         "https://www.reuters.com/world/europe/",
+        # US Futures
+        "https://www.reuters.com/markets/us/",
+        "https://www.reuters.com/business/",
+        "https://www.reuters.com/authors/niket-nishant/",
+        "https://www.reuters.com/authors/saeed-azhar/",
+        "https://www.reuters.com/authors/ann-saphir/",
+        "https://www.reuters.com/authors/howard-schneider/",
+        "https://www.reuters.com/authors/parisa-hafezi/",
+        "https://www.reuters.com/authors/david-lawder/",
     ]
 
     def run_scraper(self):

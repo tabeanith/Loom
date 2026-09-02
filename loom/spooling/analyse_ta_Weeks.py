@@ -20,16 +20,19 @@ pd.set_option('display.max_colwidth', None)
 
 from loom.spooling.source.references import load_references
 
-from loom.spooling.topics.t01_weather.topic import T01_Weather
-from loom.spooling.topics.t02_gas_fuel.topic import T02_Gas_Fuel
+from loom.spooling.topics.t02_weather.topic import T02_Weather
+from loom.spooling.topics.t03_gas_fuel.topic import T03_Gas_Fuel
 
 from loom.data.keys import Keys
 from loom.data.curves.get import read_curves_from_onedrive
 from loom.data.curves.get import extend_snapshot_days_to_today
 
-from loom.spooling.analyse_scores import calculate_sentiment_v1
+from loom.spooling.analyse_scores import calculate_sentiment_vn
 from loom.spooling.analyse_utils import calculate_mtm_from_buy_sell
 from loom.spooling.analyse_utils import calculate_mtm_from_open_position
+
+from numba import int32, float32, int64, prange, boolean
+import numba as nb
 
 
 pio.renderers.default = "browser"
@@ -37,8 +40,33 @@ tz = "Europe/Berlin"
 
 
 
+
+@nb.jit
+def numba_rolling_quantile_q_value(data, rolling_window):
+    """
+
+    """
+    length = data.shape[0]
+    result = np.copy(data)
+    result[:] = np.nan
+
+    for i in nb.prange(length):
+        if i < rolling_window: continue
+        _i_start = max([0, i-rolling_window])
+        _data = data[_i_start:i+1]
+
+        _latest = _data[-1]
+        if np.isnan(_latest): continue
+
+        _data_nonnan = _data[~np.isnan(_data)]
+        result[i] = np.mean(_data_nonnan < _latest)
+
+    return result
+
+
 def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_mwh_residual, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False):
     n_contracts = max(1, mw_sizing)
+
 
     # ---------------------- Get prices and sentiment -----------------------------
     prices_power = df_prices_power[ts_contract]
@@ -49,28 +77,76 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power
     mask2 = prices_power.index.date < ts_contract.date()
     mask_trading = mask1 & mask2
 
+    last_day_inside_week = ts_contract
+    p_slice_spt = prices_power[prices_power.index > last_day_inside_week]
+    mask_relevant_market_window = (prices_power.index >= last_day_inside_week - Day(7 + 4*7)) & (prices_power.index < last_day_inside_week - Day(7))
+    p_slice_fwd = prices_power[mask_relevant_market_window]
+    r_slice_fwd = mwh_residual.reindex(prices_power.index)[mask_relevant_market_window]
+
+    #TODO: Look at average before trading:
+    mean_lt_rdl  = r_slice_fwd[(r_slice_fwd.index < ts_start_trading)].mean()
+    mean_lt_price  = p_slice_fwd[(r_slice_fwd.index < ts_start_trading)].mean()    #TODO: Look at average before trading:
+
 
     # ------------------------- Trading price structure -----------------------------------
-    upper = (prices_power.rolling(14).quantile(0.9))
+    upper = (prices_power.rolling(14).quantile(0.75))
     middle = (prices_power.rolling(14).quantile(0.5))
-    lower = (prices_power.rolling(14).quantile(0.1))
+    lower = (prices_power.rolling(14).quantile(0.25))
 
-    mwh_upper = (mwh_residual.rolling(14).quantile(0.75))
-    mwh_middle = (mwh_residual.rolling(14).quantile(0.5))
-    mwh_lower = (mwh_residual.rolling(14).quantile(0.25))
+    mwh_rdl_relative_to_longterm = mwh_residual / mean_lt_rdl
+    price_relative_to_longterm = prices_power / mean_lt_price
+
+    a = prices_power[mask_relevant_market_window]
+    b = mwh_residual[mask_relevant_market_window]
+    r = mwh_rdl_relative_to_longterm[mask_relevant_market_window]
+    p = price_relative_to_longterm[mask_relevant_market_window]
+
+    diff_p_r = p - r
+
+    timeleftuntildelivery = (a.index - last_day_inside_week).days.values + 7 + 1
+    timeleftuntildelivery = np.abs(timeleftuntildelivery)
+    e = pd.Series(index=a.index, data=timeleftuntildelivery)
+    res = pd.concat([a, b, r, p, diff_p_r, diff_p_r.diff(), e], axis=1, ignore_index=True)
+    res.columns = ["power", "rdl", "r", "p", "diff_p_r", "diff_p_r.diff()", "e"]
+    res["ratio"] = res["power"] / res["rdl"] * 10000
+
+    print(res)
+    print("mean_lt_rdl", mean_lt_rdl)
+    print("mean_lt_price", mean_lt_price)
+    print("spot", p_slice_spt.dropna().mean())
+
+    res["powerQ"] = numba_rolling_quantile_q_value(res["power"].to_numpy(dtype=np.float32), 10)
+    res["rdlQ"] = numba_rolling_quantile_q_value(res["rdl"].to_numpy(dtype=np.float32), 10)
+
+
+
 
     # ------------------------------------- Trading -----------------------------------
     # Normal selling and buying
-    mwh_middle_diff = mwh_middle.diff()
+    sells1 = diff_p_r.diff() > 0.2
+    buys1 = diff_p_r.diff() < -0.2
+
+    sells2 = (r.diff() > 0) & ( p.diff() < 0)
+    buys2 = (r.diff() < 0) & ( p.diff() > 0)
+
+    buys3 = (res["rdlQ"] < 0.4) & ( res["powerQ"] < 0.4)
+    sells3 = (res["rdlQ"] > 0.6) & ( res["powerQ"] > 0.6)
+
+    buys4 = (res["rdlQ"] > 0.8) & ( res["powerQ"] > 0.8)
+    sells4 = (res["rdlQ"] < 0.2) & ( res["powerQ"] < 0.2)
+
+    buys5 = idx_sentiment.diff().reindex(res.index).fillna(0) < 0
+    sells5 = idx_sentiment.diff().reindex(res.index).fillna(0) > 0
+
+    buys = buys1.astype(int) + buys2.astype(int) + buys3.astype(int) + buys4.astype(int) + buys5.astype(int)
+    sells = sells1.astype(int) + sells2.astype(int) + sells3.astype(int) + sells4.astype(int) + sells5.astype(int)
+    buys *= (11 - e)
+    sells *= (11 - e)
 
     # Normal selling and buying
-    p_buys = (prices_power < lower).astype(int) * n_contracts
-    p_sells = (prices_power > upper).astype(int) * n_contracts
+    p_buys = (buys).astype(int) * n_contracts * 10
+    p_sells = (sells).astype(int) * n_contracts * 10
 
-    r_sells = (mwh_residual < mwh_lower).astype(int) * n_contracts
-    #r_buys = 0
-    r_buys = (mwh_residual > mwh_upper).astype(int) * n_contracts
-    #r_sells = 0
 
     # TODO: Bull run on sentiment. Implement the same for bear run
 
@@ -78,8 +154,11 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power
     #scaled_buy = buys * (1. + idx_sentiment/100.) #+ buyX * (idx_sentiment/100.)
     #scaled_sell = sells * (1. - idx_sentiment/100.) #+ sellX * (idx_sentiment/100.)
     # From buys and sells, weight them based on sentinemt:
-    scaled_buy = (p_buys + r_buys)  * (1. + idx_sentiment/100.)
-    scaled_sell = (p_sells + r_sells)  * (1. - idx_sentiment/100.)
+    scaled_buy = (p_buys + 0)  #* (1. + idx_sentiment/100.)
+    scaled_sell = (p_sells + 0) # * (1. - idx_sentiment/100.)
+
+    scaled_buy = scaled_buy.reindex(prices_power.index).fillna(0)
+    scaled_sell = scaled_sell.reindex(prices_power.index).fillna(0)
 
     scaled_buy = scaled_buy[mask_trading]
     scaled_sell = scaled_sell[mask_trading]
@@ -94,7 +173,7 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power
     # Check boundaries on open_volume and adjust trading:
     maximum = +15 * n_contracts
     minimum = -15 * n_contracts
-    ind_sentiment = idx_sentiment / 100. * n_contracts * 15
+    ind_sentiment = idx_sentiment / 100. * n_contracts * 15 * 2.
     _minimum = ind_sentiment + minimum
     _maximum = ind_sentiment + maximum
     _minimum = _minimum.clip(upper=0)
@@ -105,16 +184,20 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power
         bounded_volume = pd.Series(index=open_volume.index, data=0.)
         open_volume_change = open_volume.diff()
         open_volume_change.iloc[0] = open_volume.iloc[0]
+        _minimum = _minimum.reindex(open_volume.index)
+        _maximum = _maximum.reindex(open_volume.index)
 
         bounded_volume.iloc[0] = open_volume.iloc[0]
         for i, change in enumerate(open_volume_change.values):
             if i == 0: continue
             prev = bounded_volume.iloc[i-1]
             new = prev + change
-            if new > maximum:
-                bounded_volume.iloc[i] = maximum
-            elif new < minimum:
-                bounded_volume.iloc[i] = minimum
+            maxval = _maximum.iloc[i]
+            minval = _minimum.iloc[i]
+            if new > maxval:
+                bounded_volume.iloc[i] = maxval
+            elif new < minval:
+                bounded_volume.iloc[i] = minval
             else:
                 bounded_volume.iloc[i] = new
 
@@ -124,39 +207,40 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power
         open_volume_tbc = open_volume
 
     # TODO: Delivery logic
-    open_volume_tbc = open_volume_tbc.reindex(index=prices_power.index)
-    ts_last_trading_days = ts_contract - BDay(5)
-    mask_last_trading_week = (open_volume_tbc.index >= ts_last_trading_days) & (open_volume_tbc.index < ts_contract)
-    final_positions = open_volume_tbc[mask_last_trading_week]
-    final_sentiment = idx_sentiment[mask_last_trading_week]
+    if force_close_delivery:
+        open_volume_tbc = open_volume_tbc.reindex(index=prices_power.index)
+        ts_last_trading_days = ts_contract - BDay(5)
+        mask_last_trading_week = (open_volume_tbc.index >= ts_last_trading_days) & (open_volume_tbc.index < ts_contract)
+        final_positions = open_volume_tbc[mask_last_trading_week]
+        final_sentiment = idx_sentiment[mask_last_trading_week]
 
-    if (not final_positions.empty) and (not final_sentiment.empty):
-        x_pos = final_positions.mean()
-        x_sen = final_sentiment.mean()
-        print(f"Contract {ts_contract} --- Delivery Check: {x_pos} MW, sentiment {x_sen}")
+        if (not final_positions.empty) and (not final_sentiment.empty):
+            x_pos = final_positions.mean()
+            x_sen = final_sentiment.mean()
+            print(f"Contract {ts_contract} --- Delivery Check: {x_pos} MW, sentiment {x_sen}")
 
-        if (x_pos > 0) & (x_sen > 33) & (not force_close_delivery):  # TODO: pick sensible values
-            print(f"Contract {ts_contract}: Take into delivery")
-        elif (x_pos < 0) & (x_sen < 0) & (not force_close_delivery):  # TODO: pick sensible values
-            print(f"Contract {ts_contract}: Take into delivery")
+            if (x_pos > 0) & (x_sen > 33) & (not force_close_delivery):  # TODO: pick sensible values
+                print(f"Contract {ts_contract}: Take into delivery")
+            elif (x_pos < 0) & (x_sen < 0) & (not force_close_delivery):  # TODO: pick sensible values
+                print(f"Contract {ts_contract}: Take into delivery")
+            else:
+                print(f"Contract {ts_contract}: Close positions before delivery")
+                # Mismatch: Start closing the position:
+                position_at_first = final_positions.iloc[0]
+                tdays_left_until_delivery = (final_positions.index - ts_contract).days * -1
+                position_target = position_at_first * (tdays_left_until_delivery - 1.) / 5.
+                position_target = position_target.astype(int)
+                # Start closing
+                open_volume_tbc.loc[mask_last_trading_week] = position_target.values
         else:
-            print(f"Contract {ts_contract}: Close positions before delivery")
-            # Mismatch: Start closing the position:
-            position_at_first = final_positions.iloc[0]
-            tdays_left_until_delivery = (final_positions.index - ts_contract).days * -1
-            position_target = position_at_first * (tdays_left_until_delivery - 1.) / 5.
-            position_target = position_target.astype(int)
-            # Start closing
-            open_volume_tbc.loc[mask_last_trading_week] = position_target.values
-    else:
-        print(f"Contract {ts_contract}: Too far away from delivery (or no sentiment avail)", final_positions.empty, final_sentiment.empty)
+            print(f"Contract {ts_contract}: Too far away from delivery (or no sentiment avail)", final_positions.empty, final_sentiment.empty)
 
 
     # Recalculate buys and sells -- Either way the position is unchanged into delivery, or adjusted, but we have to calculate the pnl into delivery anyway
     open_volume_tbfin = open_volume_tbc.ffill().fillna(0)
 
     result_mtm, result_open_position = calculate_mtm_from_open_position(open_volume_tbfin, _traded_prices)
-    result_mtm = mtm.ffill()
+    result_mtm = result_mtm.reindex(index=prices_power.index).ffill().fillna(0)
 
     result_mtm.name = ts_contract
     result_open_position.name = ts_contract
@@ -205,8 +289,8 @@ if __name__ == "__main__":
     df = pd.concat([df1, df2, df3])
     df = df.sort_values("timestamp", ascending=False)
 
-    topic_weather = T01_Weather()
-    topic_gas_fuel = T02_Gas_Fuel()
+    topic_weather = T02_Weather()
+    topic_gas_fuel = T03_Gas_Fuel()
 
 
     df_score1 = topic_weather.calculate_scores(df)
@@ -237,14 +321,16 @@ if __name__ == "__main__":
     df_mwh_residual = curves_residual.resample(contract_sampling).sum().T
     df_mwh_residual = df_mwh_residual.reindex(index=df_prices_power.index, columns=df_prices_power.columns)
 
-    df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
+    df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power)
 
-    ts_contract = pd.Timestamp(date(2026, 8, 9), tz=tz)
-    ts_start_trading = ts_contract - Day(14)
+
+
+    # Test specific Week
+    ts_contract = pd.Timestamp(date(2025, 1, 12), tz=tz)
+    #ts_contract = pd.Timestamp(date(2026, 8, 2), tz=tz)
+    ts_start_trading = ts_contract - Day(7) - BDay(10)
     mw_sizing = 5
-
-
-    mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_mwh_residual, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False)
+    mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_mwh_residual, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=True, show_plot=False)
 
 
 
@@ -252,6 +338,7 @@ if __name__ == "__main__":
 
     # Some data analysis:
     data = []
+
     for ts_contract in df_prices_power.columns:
         prices = df_prices_power[ts_contract]
         residual = df_mwh_residual[ts_contract]
@@ -263,30 +350,39 @@ if __name__ == "__main__":
 
         _slice_fwd = prices[prices.index < last_day_of_delivery - Day(7)]
         if _slice_fwd.empty: continue
-        if len(_slice_fwd) < 15: continue
+        if len(_slice_fwd) < 20: continue
 
         spot_result = prices.loc[ts_spot_result]
         p_week_t1 = _slice_fwd.iloc[-5:].mean()
         p_week_t2 = _slice_fwd.iloc[-10:-5].mean()
         p_week_t3 = _slice_fwd.iloc[-15:-10].mean()
+        p_week_t4 = _slice_fwd.iloc[-20:-15].mean()
 
         _slice_rdl = residual[residual.index < last_day_of_delivery - Day(7)]
         r_week_t1 = _slice_rdl.iloc[-5:].mean()
         r_week_t2 = _slice_rdl.iloc[-10:-5].mean()
         r_week_t3 = _slice_rdl.iloc[-15:-10].mean()
+        r_week_t4 = _slice_rdl.iloc[-20:-15].mean()
 
-
-
+        last_rdl = _slice_rdl.iloc[-1]
+        rdl_diff = _slice_rdl.iloc[-20:].diff()
+        price_diff = _slice_fwd.iloc[-20:].diff()
+        factor = rdl_diff / price_diff
+        factor_avg = factor.mean()
 
         data.append({
             "ts_contract": ts_contract,
             "spot_result": spot_result,
+            "last_rdl": last_rdl,
             "p_week_t1": p_week_t1,
             "p_week_t2": p_week_t2,
             "p_week_t3": p_week_t3,
+            "p_week_t4": p_week_t4,
             "r_week_t1": r_week_t1,
             "r_week_t2": r_week_t2,
             "r_week_t3": r_week_t3,
+            "r_week_t4": r_week_t4,
+            "factor": factor_avg,
         })
 
     df_data = pd.DataFrame(data)
@@ -306,7 +402,7 @@ if __name__ == "__main__":
         all_mtm = []
         all_open_volume = []
 
-        for ts_contract in pd.date_range(pd.Timestamp(date(2024, 1, 1), tz=tz), pd.Timestamp(date(2027, 1, 1), tz=tz), freq=contract_sampling):
+        for ts_contract in pd.date_range(pd.Timestamp(date(2024, 1, 1), tz=tz), pd.Timestamp(date(2027, 10, 1), tz=tz), freq=contract_sampling):
             ts_start_trading = ts_contract - BDay(10)
 
             mtm, open_volume = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power,df_mwh_residual,
@@ -329,12 +425,7 @@ if __name__ == "__main__":
     # All Weeklies
 
     hours = 24 * 7
-    mw_sizing = 25
+    mw_sizing = 10
     total_mtm_weeks, df_all_open_volume_weeks = run(contract_sampling, hours, mw_sizing)
-
-
-
-
-
 
 

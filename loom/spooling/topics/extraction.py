@@ -17,6 +17,89 @@ pd.set_option('display.max_colwidth', None)
 tz = "Europe/Berlin"
 
 
+
+def extract_answer_yes_no(txt, first_string):
+    rows = txt.split("\n")
+
+    for row in rows:
+        _row = row.lower()
+        #print(_row)
+
+        i_first_string = _row.find(first_string)
+        if (i_first_string > -1) and (i_first_string < 15):
+
+            __row = _row.split(":")[1][0:15]
+            #print(__row)
+
+            if "yes" in __row:
+                return 1
+            if "no" in __row:
+                return 0
+            if "impl" in __row:
+                return 0.25
+
+    return np.nan
+
+
+def extract_answer_int(txt, first_string):
+    rows = txt.split("\n")
+
+    for row in rows:
+        _row = row.lower()
+
+        i_first_string = _row.find(first_string)
+        if (i_first_string > -1) and (i_first_string < 15):
+
+            __row = _row.split(":")[1][0:15]
+
+            mtch = re.findall(r"\d+", row)
+            if len(mtch) > 0:
+                return int(mtch[0])
+
+    return np.nan
+
+
+
+def extract_answer_int_four_season(txt, first_string):
+    rows = txt.split("\n")
+
+    for row in rows:
+        _row = row.lower()
+
+        i_first_string = _row.find(first_string)
+        if (i_first_string > -1) and (i_first_string < 15):
+
+            __row = _row.split(":")[1]
+
+            if ("spring" in __row) and ("summer" in __row) and ("fall" in __row) and ("winter" in __row):
+
+                mtch = re.findall(r"\d+", row)
+                if len(mtch) >= 4:
+                    return [int(mtch[0]), int(mtch[1]), int(mtch[2]), int(mtch[3])]
+
+    return [np.nan, np.nan, np.nan, np.nan]
+
+
+def extract_answer_multiple_floats(txt, first_string):
+    rows = txt.split("\n")
+
+    for row in rows:
+        _row = row.lower()
+
+        i_first_string = _row.find(first_string)
+        if (i_first_string > -1) and (i_first_string < 3):
+
+            __row = _row.split(":")[1][0:15]
+
+            mtch = re.findall(r'-?\d+\.\d+', row)
+            return [float(x) for x in mtch]
+
+    return []
+
+
+
+
+
 def extract_q(q_code, txt):
     rows = txt.split("\n")
     data = {
@@ -32,7 +115,7 @@ def extract_q(q_code, txt):
             if "yes" in row:
                 data[f"{q_code}_r"] = 1
             if "implicit" in row:
-                data[f"{q_code}_r"] = 0.5
+                data[f"{q_code}_r"] = 0.25
         if "severity score: " in row:
             mtch = re.findall(r"\d+", row)
 

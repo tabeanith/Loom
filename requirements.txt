@@ -12,5 +12,6 @@ pytest_mock
 xlwings
 playwright
 anthropic
-
+python-dotenv
+numba
 

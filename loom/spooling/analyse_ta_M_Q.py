@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 
 from pandas.tseries.offsets import MonthBegin, Day, Hour, Week, BDay
 
+from loom.spooling.topics.t01_eu_power.topic import T01_EU_Power
 
 pd.set_option('display.max_rows', 10000)
 pd.set_option('display.max_columns', 500)
@@ -20,14 +21,14 @@ pd.set_option('display.max_colwidth', None)
 
 from loom.spooling.source.references import load_references
 
-from loom.spooling.topics.t01_weather.topic import T01_Weather
-from loom.spooling.topics.t02_gas_fuel.topic import T02_Gas_Fuel
+from loom.spooling.topics.t02_weather.topic import T02_Weather
+from loom.spooling.topics.t03_gas_fuel.topic import T03_Gas_Fuel
 
 from loom.data.keys import Keys
 from loom.data.curves.get import read_curves_from_onedrive
 from loom.data.curves.get import extend_snapshot_days_to_today
 
-from loom.spooling.analyse_scores import calculate_sentiment_v1
+from loom.spooling.analyse_scores import calculate_sentiment_vn
 from loom.spooling.analyse_utils import calculate_mtm_from_buy_sell
 from loom.spooling.analyse_utils import calculate_mtm_from_open_position
 
@@ -67,12 +68,24 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
     past = (prices_power > upper).astype(int).rolling(7).mean() > 0.75
     sellsingular = (prices_power < middle)
     sellX = (past & sellsingular).astype(int) * 6 * n_contracts
-
     buyX = (prices_power < middle).astype(int) * 3 * n_contracts
 
+    # TODO: Bear run on sentiment!!!
+
+    past = (prices_power < lower).astype(int).rolling(7).mean() > 0.75
+    buysingular = (prices_power > middle)
+    buyY = (past & buysingular).astype(int) * 6 * n_contracts
+    sellY = (prices_power > middle).astype(int) * 3 * n_contracts
+
     # From buys and sells, weight them based on sentinemt:
-    scaled_buy = buys * (1. - idx_sentiment/100.) + buyX * (idx_sentiment/100.)
-    scaled_sell = sells * (1. - idx_sentiment/100.) + sellX * (idx_sentiment/100.)
+    idx_sentiment_abs = idx_sentiment.abs() / 100.
+    idx_sentiment_bull_abs = idx_sentiment.clip(lower=0).abs() / 100.
+    idx_sentiment_bear_abs = idx_sentiment.clip(upper=0).abs() / 100.
+
+    scaled_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs
+    scaled_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs
+
+
 
     scaled_buy = scaled_buy[mask_trading]
     scaled_sell = scaled_sell[mask_trading]
@@ -80,14 +93,12 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
 
     mtm, open_volume = calculate_mtm_from_buy_sell(scaled_buy, scaled_sell, _traded_prices)
 
-    # TODO: Bear run on sentiment!!!
-
 
 
     # Check boundaries on open_volume and adjust trading:
     maximum = +15 * n_contracts
     minimum = -15 * n_contracts
-    ind_sentiment = idx_sentiment / 100. * n_contracts * 15
+    ind_sentiment = idx_sentiment / 100. * n_contracts * 15 * 2.
     _minimum = ind_sentiment + minimum
     _maximum = ind_sentiment + maximum
     _minimum = _minimum.clip(upper=0)
@@ -98,16 +109,20 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
         bounded_volume = pd.Series(index=open_volume.index, data=0.)
         open_volume_change = open_volume.diff()
         open_volume_change.iloc[0] = open_volume.iloc[0]
+        _minimum = _minimum.reindex(open_volume.index)
+        _maximum = _maximum.reindex(open_volume.index)
 
         bounded_volume.iloc[0] = open_volume.iloc[0]
         for i, change in enumerate(open_volume_change.values):
             if i == 0: continue
             prev = bounded_volume.iloc[i-1]
             new = prev + change
-            if new > maximum:
-                bounded_volume.iloc[i] = maximum
-            elif new < minimum:
-                bounded_volume.iloc[i] = minimum
+            maxval = _maximum.iloc[i]
+            minval = _minimum.iloc[i]
+            if new > maxval:
+                bounded_volume.iloc[i] = maxval
+            elif new < minval:
+                bounded_volume.iloc[i] = minval
             else:
                 bounded_volume.iloc[i] = new
 
@@ -149,7 +164,7 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
     open_volume_tbfin = open_volume_tbc.ffill().fillna(0)
 
     result_mtm, result_open_position = calculate_mtm_from_open_position(open_volume_tbfin, _traded_prices)
-    result_mtm = mtm.ffill()
+    result_mtm = result_mtm.reindex(index=prices_power.index).ffill().fillna(0)
 
     result_mtm.name = ts_contract
     result_open_position.name = ts_contract
@@ -176,6 +191,9 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
         (vol*scaled_buy).plot(ax=ax2, label="scaled_buy", color="green")
         (vol*scaled_sell).plot(ax=ax2, label="scaled_sell", color="red")
         idx_sentiment.plot(ax=ax2, label="score_reduction", color="orange")
+        (vol*_maximum).plot(ax=ax2, label="open_pos_maximum", color="black", linestyle="dotted")
+        (vol*_minimum).plot(ax=ax2, label="open_pos_minimum", color="black", linestyle="dotted")
+
 
         (vol * result_mtm * 31 * 24).plot(ax=ax3, label="result_mtm")
         ax3.axhline(y=0.0, color='r', linestyle='-')
@@ -228,15 +246,19 @@ if __name__ == "__main__":
     df = pd.concat([df1, df2, df3])
     df = df.sort_values("timestamp", ascending=False)
 
-    topic_weather = T01_Weather()
-    topic_gas_fuel = T02_Gas_Fuel()
+    topic_eu = T01_EU_Power()
+    topic_weather = T02_Weather()
+    topic_gas_fuel = T03_Gas_Fuel()
 
-
+    #df_score0 = topic_eu.calculate_scores(df)
     df_score1 = topic_weather.calculate_scores(df)
     df_score2 = topic_gas_fuel.calculate_scores(df)
+
+    #for col in df_score1.columns:
+    #    if isinstance(col, pd.Timestamp):
+    #        df_score0[col] = df_score0["score"]
+
     df_scores = pd.concat([df_score1, df_score2]).sort_values("timestamp", ascending=False)
-
-
 
 
     curves_power = read_curves_from_onedrive(f"data_historical_2024+", Keys.power_germany)
@@ -247,13 +269,13 @@ if __name__ == "__main__":
 
     contract_sample = "MS"
     df_prices_power = curves_power.resample(contract_sample).mean().T
-    df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
+    df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power)
 
-    ts_contract = pd.Timestamp(date(2026, 10, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 11, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(4)
     mw_sizing = 5
 
-    mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False)
+    mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=True)
 
 
 
@@ -262,7 +284,7 @@ if __name__ == "__main__":
         all_open_volume = []
 
         df_prices_power = curves_power.resample(contract_sampling).mean().T
-        df_contract_sentiment, map_contract_to_score = calculate_sentiment_v1(df_scores, df_prices_power)
+        df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power)
 
         for ts_contract in pd.date_range(pd.Timestamp(date(2026, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
             ts_start_trading = ts_contract - MonthBegin(start_n_month_before_del)
@@ -285,6 +307,7 @@ if __name__ == "__main__":
 
 
     # All monthlies, All quarterlies
+
 
 
     contract_sampling = "MS"
@@ -315,6 +338,10 @@ if __name__ == "__main__":
     print_to_do(df_all_open_volume_quarters, prev_td)
 
 
+
+    df_all_open_volume_months.sum(axis=1).plot(color="orange", label="total_mtm_months")
+    df_all_open_volume_quarters.sum(axis=1).plot(color="blue", label="total_mtm_quarters")
+    (df_all_open_volume_months.sum(axis=1) + df_all_open_volume_quarters.sum(axis=1)).plot(color="black", label="total_mtm_quarters")
 
 
 

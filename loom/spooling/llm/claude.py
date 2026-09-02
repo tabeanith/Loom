@@ -2,6 +2,8 @@ import json
 import pandas as pd
 import numpy as np
 import anthropic
+from dotenv import load_dotenv
+import os
 
 pd.set_option('display.max_rows', 10000)
 pd.set_option('display.max_columns', 500)
@@ -12,16 +14,16 @@ pd.set_option('display.max_colwidth', None)
 tz = "Europe/Berlin"
 
 
-# TODO: Make this role configurable
-system = "Your are an analyst working for a commodities trading hedge fund in Europe. You are assisting traders to trade German Power Base Futures. Your analysis is sharp, mindful, succinct. Provide concise, focused responses. When you are evaluating risks: Put focus on forward-looking information, not historical/past."
 role = "user"
 
 
-api_key = "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"
+load_dotenv()
+
+api_key = os.environ.get('ANTHROPIC_API_KEY')
 client = anthropic.Anthropic(api_key=api_key)
 
 
-def ask_claude(content, use_web_fetch: bool=False):
+def ask_claude(system, content, use_web_fetch: bool=False):
     # Initialize the client with your API key
     # Get a key at https://aistudio.google.com/apikey
 
