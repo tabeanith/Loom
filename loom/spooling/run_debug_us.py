@@ -19,6 +19,7 @@ from loom.spooling.analyse_scores import calculate_sentiment_v1
 from loom.spooling.analyse_scores import calculate_sentiment_vn
 from loom.spooling.analyse_utils import calculate_mtm_from_buy_sell
 from loom.spooling.analyse_utils import calculate_mtm_from_open_position
+from loom.utils.kernel import numba_rolling_quantile_q_value
 
 
 import pandas as pd
@@ -63,9 +64,13 @@ if __name__ == "__main__":
 
 
         #  ----------------------------------------------  Strats  -------------------------------------------------
-        buys = sentiment.diff() > 0
-        sells = sentiment.diff() < 0
+        _df["pricesQ"] = numba_rolling_quantile_q_value(prices.to_numpy(dtype=np.float32), 12*6)
+
+        buys = (sentiment < 0) & (_df["pricesQ"] < 0.2)
+        sells = (sentiment < 0) & (_df["pricesQ"] > 0.8)
         mtm, open_volume = calculate_mtm_from_buy_sell(buys, sells, prices)
+
+
 
 
 

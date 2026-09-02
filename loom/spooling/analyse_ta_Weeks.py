@@ -31,37 +31,11 @@ from loom.spooling.analyse_scores import calculate_sentiment_vn
 from loom.spooling.analyse_utils import calculate_mtm_from_buy_sell
 from loom.spooling.analyse_utils import calculate_mtm_from_open_position
 
-from numba import int32, float32, int64, prange, boolean
-import numba as nb
+from loom.utils.kernel import numba_rolling_quantile_q_value
 
 
 pio.renderers.default = "browser"
 tz = "Europe/Berlin"
-
-
-
-
-@nb.jit
-def numba_rolling_quantile_q_value(data, rolling_window):
-    """
-
-    """
-    length = data.shape[0]
-    result = np.copy(data)
-    result[:] = np.nan
-
-    for i in nb.prange(length):
-        if i < rolling_window: continue
-        _i_start = max([0, i-rolling_window])
-        _data = data[_i_start:i+1]
-
-        _latest = _data[-1]
-        if np.isnan(_latest): continue
-
-        _data_nonnan = _data[~np.isnan(_data)]
-        result[i] = np.mean(_data_nonnan < _latest)
-
-    return result
 
 
 def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_mwh_residual, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False):
