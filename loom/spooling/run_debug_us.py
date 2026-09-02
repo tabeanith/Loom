@@ -14,7 +14,12 @@ from loom.spooling.llm.ask_and_answer import ask_and_answer
 from loom.spooling.llm.ask_and_answer import ask_and_answer_for_uuid
 
 from loom.spooling.source.references import load_references
+
 from loom.spooling.analyse_scores import calculate_sentiment_v1
+from loom.spooling.analyse_scores import calculate_sentiment_vn
+from loom.spooling.analyse_utils import calculate_mtm_from_buy_sell
+from loom.spooling.analyse_utils import calculate_mtm_from_open_position
+
 
 import pandas as pd
 import numpy as np
@@ -47,25 +52,35 @@ if __name__ == "__main__":
         tf = "5min"
         df = read_dataframe(symbol, tf)
         _df = df[df.index > df_result.index[-1]]
+        prices = _df["open"]
 
-        sentiment = calculate_sentiment_v1(df_result, 7)
-        sentiment_bull = calculate_sentiment_v1(df_result[df_result["score"] > 0], 7)
-        sentiment_bear = calculate_sentiment_v1(df_result[df_result["score"] < 0], 7)
+        sentiment = calculate_sentiment_v1(df_result, prices, 7)
+        sentiment_bull = calculate_sentiment_v1(df_result[df_result["score"] > 0], prices,  7)
+        sentiment_bear = calculate_sentiment_v1(df_result[df_result["score"] < 0], prices,  7)
         sentiment_diff = sentiment_bull.reindex(df_result.index).ffill().diff() + sentiment_bear.reindex(df_result.index).ffill().diff()
 
 
 
 
-        fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
+        #  ----------------------------------------------  Strats  -------------------------------------------------
+        buys = sentiment.diff() > 0
+        sells = sentiment.diff() < 0
+        mtm, open_volume = calculate_mtm_from_buy_sell(buys, sells, prices)
+
+
+
+
+        fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, sharex=True)
         scores = df_result["score"]
 
-
-        _df["open"].plot(ax=ax1, label="open", color="black")
+        prices.plot(ax=ax1, label="open", color="black")
         ax2.scatter(x=scores.index, y=scores.values, label="scores", marker='o', linestyle='None')
         ax2.stem(scores.index, scores.values)
         sentiment_bull.plot(ax=ax2, label="sentiment_bull", color="green")
         (-sentiment_bear).plot(ax=ax2, label="sentiment_bear", color="red")
         sentiment.plot(ax=ax2, label="sentiment", color="orange")
+
+        mtm.plot(ax=ax3, label="mtm", color="black")
 
 
         plt.legend()

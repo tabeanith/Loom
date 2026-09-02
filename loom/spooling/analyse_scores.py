@@ -186,9 +186,10 @@ def calculate_sentiment_vn(df_score, df_out_idx, lookback_days):
 
 
 
-def calculate_sentiment_v1(df_score, lookback_days):
+def calculate_sentiment_v1(df_score, df_out_idx, lookback_days):
     # ---------------------- Get sentiment scoring -----------------------------
-    sentiment = pd.Series(index=df_score.index, data=np.nan)
+    sentiment = pd.Series(index=df_out_idx.index, data=np.nan)
+
     scores = df_score["score"]
     relevance = df_score["relevance"]
 
