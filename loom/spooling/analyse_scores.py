@@ -79,7 +79,7 @@ def create_plot(
         y=df_contract_sentiment[ts_contract].values,
         mode="lines+markers",
         marker=dict(
-            size=5,
+            size=15,
             color="red",
         )
     ))
@@ -91,7 +91,7 @@ def create_plot(
         y=df_prices_power[ts_contract].values,
         mode="lines+markers",
         marker=dict(
-            size=5,
+            size=15,
             color="#331D75",
         )
     ))
