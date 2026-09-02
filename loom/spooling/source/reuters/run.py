@@ -41,6 +41,7 @@ class Reuters(UniversalScraper):
         "https://www.reuters.com/business/energy",
         "https://www.reuters.com/world/europe/",
         # US Futures
+        "https://www.reuters.com/world/",
         "https://www.reuters.com/markets/us/",
         "https://www.reuters.com/business/",
         "https://www.reuters.com/authors/niket-nishant/",
