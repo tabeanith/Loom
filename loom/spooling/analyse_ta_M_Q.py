@@ -53,9 +53,9 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
 
 
     # ------------------------- Trading price structure -----------------------------------
-    upper = (prices_power.rolling(7).quantile(0.75))
+    upper = (prices_power.rolling(7).quantile(0.9))
     middle = (prices_power.rolling(7).quantile(0.5))
-    lower = (prices_power.rolling(7).quantile(0.25))
+    lower = (prices_power.rolling(7).quantile(0.1))
 
 
     # ------------------------------------- Trading -----------------------------------
@@ -81,7 +81,7 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
     sellY = (prices_power > middle).astype(int) * 2 * n_contracts
 
     # From buys and sells, weight them based on sentinemt:
-    idx_sentiment_abs = idx_sentiment.abs() / 100.
+    idx_sentiment_abs = idx_sentiment.abs() / 100. * 1.5
     idx_sentiment_bull_abs = idx_sentiment.clip(lower=0).abs() / 100.
     idx_sentiment_bear_abs = idx_sentiment.clip(upper=0).abs() / 100.
 
@@ -103,7 +103,7 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
     _idx_sentiment = idx_sentiment / 100.
     maximum = +10 * n_contracts
     minimum = -10 * n_contracts
-    ind_sentiment = _idx_sentiment * n_contracts * 10. * 0.75
+    ind_sentiment = _idx_sentiment * n_contracts * 10. # * 0.75
     _minimum = ind_sentiment + minimum
     _maximum = ind_sentiment + maximum
     _minimum = _minimum.clip(upper=0)
@@ -276,7 +276,7 @@ if __name__ == "__main__":
     df_prices_power = curves_power.resample(contract_sample).mean().T
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-    ts_contract = pd.Timestamp(date(2026, 7, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 10, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(12)
     mw_sizing = 10
 
