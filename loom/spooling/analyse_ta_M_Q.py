@@ -65,20 +65,24 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
 
     # TODO: Bull run on sentiment. Implement the same for bear run
 
-    past = (prices_power > upper).astype(int).rolling(7).mean() > 0.75
+    #ratio_by_sentiment = idx_sentiment.diff() / 10.
+    #ratio_by_sentiment = ratio_by_sentiment.fillna(0.0)
+
+    past = (prices_power > upper).astype(int).rolling(7).mean() > 0.5
     sellsingular = (prices_power < middle)
     sellX = (past & sellsingular).astype(int) * 6 * n_contracts
-    buyX = (prices_power < middle).astype(int) * 3 * n_contracts
+    buyX = (prices_power < middle).astype(int) * 2 * n_contracts
+    #buyX = (ratio_by_sentiment - 1.).clip(lower=0) * 1 * n_contracts  #
+    #sellX = (ratio_by_sentiment - 1.).clip(upper=0).abs() * 1 * n_contracts  #
 
     # TODO: Bear run on sentiment!!!
 
-    past = (prices_power < lower).astype(int).rolling(7).mean() > 0.75
+    past = (prices_power < lower).astype(int).rolling(7).mean() > 0.5
     buysingular = (prices_power > middle)
     buyY = (past & buysingular).astype(int) * 6 * n_contracts
-    sellY = (prices_power > middle).astype(int) * 3 * n_contracts
+    sellY = (prices_power > middle).astype(int) * 2 * n_contracts
 
     # From buys and sells, weight them based on sentinemt:
-    idx_sentiment = idx_sentiment * 1.25
     idx_sentiment_abs = idx_sentiment.abs() / 100.
     idx_sentiment_bull_abs = idx_sentiment.clip(lower=0).abs() / 100.
     idx_sentiment_bear_abs = idx_sentiment.clip(upper=0).abs() / 100.
@@ -272,9 +276,9 @@ if __name__ == "__main__":
     df_prices_power = curves_power.resample(contract_sample).mean().T
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-    ts_contract = pd.Timestamp(date(2026, 9, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 12, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(4)
-    mw_sizing = 10
+    mw_sizing = 15
 
     mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=True)
 
