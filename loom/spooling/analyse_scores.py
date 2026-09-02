@@ -78,8 +78,11 @@ def create_plot(
         x=df_contract_sentiment[ts_contract].index,
         y=df_contract_sentiment[ts_contract].values,
         mode="lines+markers",
+        line=dict(
+            width=2.5,
+        ),
         marker=dict(
-            size=15,
+            size=5,
             color="red",
         )
     ))
@@ -90,8 +93,11 @@ def create_plot(
         x=df_prices_power[ts_contract].index,
         y=df_prices_power[ts_contract].values,
         mode="lines+markers",
+        line=dict(
+            width=2.5,
+        ),
         marker=dict(
-            size=15,
+            size=5,
             color="#331D75",
         )
     ))
