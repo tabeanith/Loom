@@ -352,6 +352,14 @@ if __name__ == "__main__":
 
 
 
+    today_td = pd.Timestamp.now(tz=tz).floor("D")
+    print_to_do(df_all_open_volume_months, today_td)
+    print_to_do(df_all_open_volume_quarters, today_td)
+
+
+
+
+
 
 
 
