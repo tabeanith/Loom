@@ -11,7 +11,7 @@ from loom.spooling.topics.universal_topic import UniversalTopic
 
 from loom.spooling.llm.claude import ask_claude
 
-from loom.util.text import count_words, count_keywords
+from loom.utils.text import count_words, count_keywords
 
 tz = "Europe/Berlin"
 

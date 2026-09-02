@@ -10,7 +10,7 @@ from loom.spooling.source.references import update_references
 from loom.spooling.source.references import load_references
 from loom.spooling.source.references import save_references
 
-from loom.util.text import count_words, count_keywords
+from loom.utils.text import count_words, count_keywords
 
 pd.set_option('display.max_rows', 10000)
 pd.set_option('display.max_columns', 500)

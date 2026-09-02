@@ -3,6 +3,8 @@ from loom.spooling.source.severe_weather_europe.run import SevereWeatherEurope
 from loom.spooling.source.theguardian.run import TheGuardian
 from loom.spooling.source.reuters.run import Reuters
 
+from loom.data.ibkr.api import read_dataframe
+
 from loom.spooling.topics.t01_eu_power.topic import T01_EU_Power
 from loom.spooling.topics.t02_weather.topic import T02_Weather
 from loom.spooling.topics.t03_gas_fuel.topic import T03_Gas_Fuel
@@ -41,23 +43,29 @@ if __name__ == "__main__":
         df_ref = load_references(scraper.get_folder())
         df_result = topic.calculate_scores(df_ref)
 
+        symbol = "NQ"
+        tf = "5min"
+        df = read_dataframe(symbol, tf)
+        _df = df[df.index > df_result.index[-1]]
 
+        sentiment = calculate_sentiment_v1(df_result, 7)
         sentiment_bull = calculate_sentiment_v1(df_result[df_result["score"] > 0], 7)
         sentiment_bear = calculate_sentiment_v1(df_result[df_result["score"] < 0], 7)
         sentiment_diff = sentiment_bull.reindex(df_result.index).ffill().diff() + sentiment_bear.reindex(df_result.index).ffill().diff()
+
+
 
 
         fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
         scores = df_result["score"]
 
 
+        _df["open"].plot(ax=ax1, label="open", color="black")
         ax2.scatter(x=scores.index, y=scores.values, label="scores", marker='o', linestyle='None')
         ax2.stem(scores.index, scores.values)
-        sentiment_bull.plot(ax=ax2, label="sentiment", color="green")
-        (-sentiment_bear).plot(ax=ax2, label="sentiment", color="red")
-        sentiment_diff.plot(ax=ax2, label="sentiment", color="black")
-
-        sentiment_diff.cumsum().plot(ax=ax2, label="sentiment", color="orange")
+        sentiment_bull.plot(ax=ax2, label="sentiment_bull", color="green")
+        (-sentiment_bear).plot(ax=ax2, label="sentiment_bear", color="red")
+        sentiment.plot(ax=ax2, label="sentiment", color="orange")
 
 
         plt.legend()
