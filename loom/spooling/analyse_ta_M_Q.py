@@ -276,7 +276,7 @@ if __name__ == "__main__":
     df_prices_power = curves_power.resample(contract_sample).mean().T
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-    ts_contract = pd.Timestamp(date(2026, 12, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 9, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(4)
     mw_sizing = 15
 
