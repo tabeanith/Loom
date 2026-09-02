@@ -291,7 +291,7 @@ if __name__ == "__main__":
         df_prices_power = curves_power.resample(contract_sampling).mean().T
         df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-        for ts_contract in pd.date_range(pd.Timestamp(date(2026, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
+        for ts_contract in pd.date_range(pd.Timestamp(date(2026, 7, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
             ts_start_trading = ts_contract - MonthBegin(start_n_month_before_del)
 
             mtm, open_volume = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power,
@@ -318,7 +318,7 @@ if __name__ == "__main__":
     contract_sampling = "MS"
     start_n_month_before_del = 4
     hours = 24 * 30
-    mw_sizing = 10
+    mw_sizing = 5
     total_mtm_months, df_all_open_volume_months = run(contract_sampling, start_n_month_before_del, hours, mw_sizing)
 
 
@@ -326,7 +326,7 @@ if __name__ == "__main__":
     contract_sampling = "QS"
     start_n_month_before_del = 9
     hours = 24 * 30 * 3
-    mw_sizing = 5
+    mw_sizing = 2.5
     total_mtm_quarters, df_all_open_volume_quarters = run(contract_sampling, start_n_month_before_del, hours, mw_sizing)
 
 
