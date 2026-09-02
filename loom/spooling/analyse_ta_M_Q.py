@@ -55,7 +55,7 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
     # ------------------------- Trading price structure -----------------------------------
     upper = (prices_power.rolling(7).quantile(0.75))
     middle = (prices_power.rolling(7).quantile(0.5))
-    lower = (prices_power.rolling(7).quantile(0.27))
+    lower = (prices_power.rolling(7).quantile(0.25))
 
 
     # ------------------------------------- Trading -----------------------------------
@@ -78,6 +78,7 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
     sellY = (prices_power > middle).astype(int) * 3 * n_contracts
 
     # From buys and sells, weight them based on sentinemt:
+    idx_sentiment = idx_sentiment * 1.25
     idx_sentiment_abs = idx_sentiment.abs() / 100.
     idx_sentiment_bull_abs = idx_sentiment.clip(lower=0).abs() / 100.
     idx_sentiment_bear_abs = idx_sentiment.clip(upper=0).abs() / 100.
@@ -96,9 +97,9 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
 
 
     # Check boundaries on open_volume and adjust trading:
-    maximum = +15 * n_contracts
-    minimum = -15 * n_contracts
-    ind_sentiment = idx_sentiment / 100. * n_contracts * 15 * 2.
+    maximum = +10 * n_contracts
+    minimum = -10 * n_contracts
+    ind_sentiment = idx_sentiment / 100. * n_contracts * 10. * 2.
     _minimum = ind_sentiment + minimum
     _maximum = ind_sentiment + maximum
     _minimum = _minimum.clip(upper=0)
@@ -269,11 +270,11 @@ if __name__ == "__main__":
 
     contract_sample = "MS"
     df_prices_power = curves_power.resample(contract_sample).mean().T
-    df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power)
+    df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-    ts_contract = pd.Timestamp(date(2026, 11, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 9, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(4)
-    mw_sizing = 5
+    mw_sizing = 10
 
     mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=True)
 
@@ -284,7 +285,7 @@ if __name__ == "__main__":
         all_open_volume = []
 
         df_prices_power = curves_power.resample(contract_sampling).mean().T
-        df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power)
+        df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
         for ts_contract in pd.date_range(pd.Timestamp(date(2026, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
             ts_start_trading = ts_contract - MonthBegin(start_n_month_before_del)
@@ -332,16 +333,19 @@ if __name__ == "__main__":
     (total_mtm_months + total_mtm_quarters).plot(color="black", label="total_mtm_quarters")
 
 
+    df_all_open_volume_months.plot()
+    df_all_open_volume_quarters.plot()
+    df_all_open_volume_months.sum(axis=1).plot(color="orange", label="total_mtm_months")
+    df_all_open_volume_quarters.sum(axis=1).plot(color="blue", label="total_mtm_quarters")
+    (df_all_open_volume_months.sum(axis=1) + df_all_open_volume_quarters.sum(axis=1)).plot(color="black", label="total_mtm_quarters")
+
+
+
 
     prev_td = pd.Timestamp.now(tz=tz).floor("D") - BDay(1)
     print_to_do(df_all_open_volume_months, prev_td)
     print_to_do(df_all_open_volume_quarters, prev_td)
 
-
-
-    df_all_open_volume_months.sum(axis=1).plot(color="orange", label="total_mtm_months")
-    df_all_open_volume_quarters.sum(axis=1).plot(color="blue", label="total_mtm_quarters")
-    (df_all_open_volume_months.sum(axis=1) + df_all_open_volume_quarters.sum(axis=1)).plot(color="black", label="total_mtm_quarters")
 
 
 
