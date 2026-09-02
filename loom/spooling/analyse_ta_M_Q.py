@@ -255,7 +255,7 @@ if __name__ == "__main__":
     topic_weather = T02_Weather()
     topic_gas_fuel = T03_Gas_Fuel()
 
-    #df_score0 = topic_eu.calculate_scores(df)
+    df_score0 = topic_eu.calculate_scores(df)
     df_score1 = topic_weather.calculate_scores(df)
     df_score2 = topic_gas_fuel.calculate_scores(df)
 
