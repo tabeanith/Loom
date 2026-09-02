@@ -53,7 +53,7 @@ if __name__ == "__main__":
     topic3 = T03_Gas_Fuel()
     topic11 = T11_US_Stocks()
 
-    days_back_in_time = 7
+    days_back_in_time = 5
 
     print("\n Check for new aricles to be processed by AI \n")
 
