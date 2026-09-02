@@ -42,7 +42,9 @@ if __name__ == "__main__":
         df_result = topic.calculate_scores(df_ref)
 
 
-        sentiment = calculate_sentiment_v1(df_result, 5)
+        sentiment_bull = calculate_sentiment_v1(df_result[df_result["score"] > 0], 7)
+        sentiment_bear = calculate_sentiment_v1(df_result[df_result["score"] < 0], 7)
+        sentiment_diff = sentiment_bull.reindex(df_result.index).ffill().diff() + sentiment_bear.reindex(df_result.index).ffill().diff()
 
 
         fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
@@ -51,7 +53,12 @@ if __name__ == "__main__":
 
         ax2.scatter(x=scores.index, y=scores.values, label="scores", marker='o', linestyle='None')
         ax2.stem(scores.index, scores.values)
-        sentiment.plot(ax=ax2, label="sentiment", color="red")
+        sentiment_bull.plot(ax=ax2, label="sentiment", color="green")
+        (-sentiment_bear).plot(ax=ax2, label="sentiment", color="red")
+        sentiment_diff.plot(ax=ax2, label="sentiment", color="black")
+
+        sentiment_diff.cumsum().plot(ax=ax2, label="sentiment", color="orange")
+
 
         plt.legend()
         plt.show()
