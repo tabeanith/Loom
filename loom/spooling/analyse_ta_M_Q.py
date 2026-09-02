@@ -278,7 +278,7 @@ if __name__ == "__main__":
 
     ts_contract = pd.Timestamp(date(2026, 9, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(4)
-    mw_sizing = 15
+    mw_sizing = 5
 
     mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=True)
 
