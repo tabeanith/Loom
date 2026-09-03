@@ -55,59 +55,71 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
 
 
     # ------------------------- Trading price structure -----------------------------------
-    upper = (prices_power.rolling(7).quantile(0.9))
-    middle = (prices_power.rolling(7).quantile(0.5))
-    lower = (prices_power.rolling(7).quantile(0.1))
+    upper = (prices_power.rolling(5).quantile(0.75))
+    middle = (prices_power.rolling(5).quantile(0.5))
+    lower = (prices_power.rolling(5).quantile(0.25))
 
 
     # ------------------------------------- Trading -----------------------------------
-    # Normal selling and buying
+
+    # STRAT --- Normal selling and buying
     buys = (prices_power < lower).astype(int) * n_contracts
     sells = (prices_power > upper).astype(int) * n_contracts
 
     # TODO: Bull run on sentiment. Implement the same for bear run
 
-    #ratio_by_sentiment = idx_sentiment.diff() / 10.
-    #ratio_by_sentiment = ratio_by_sentiment.fillna(0.0)
-
-    past = (prices_power > upper).astype(int).rolling(7).mean() > 0.75
+    # STRAT --- Bullish buying
+    past = (prices_power > upper).astype(int).rolling(5).mean() > 0.75
     sellsingular = (prices_power < middle)
-    sellX = (past & sellsingular).astype(int) * 8 * n_contracts
+    sellX = (past & sellsingular).astype(int) * 10 * n_contracts
     buyX = (prices_power < middle).astype(int) * 2 * n_contracts
 
-    # TODO: Bear run on sentiment!!!
+    # TODO: Bear run on sentiment!!! -> CHECK THAT THIS mirrors bull case
 
-    past = (prices_power < lower).astype(int).rolling(7).mean() > 0.75
+    # STRAT --- Bearish buying
+    past = (prices_power < lower).astype(int).rolling(5).mean() > 0.75
     buysingular = (prices_power > middle)
-    buyY = (past & buysingular).astype(int) * 8 * n_contracts
+    buyY = (past & buysingular).astype(int) * 10 * n_contracts
     sellY = (prices_power > middle).astype(int) * 2 * n_contracts
 
+
+    # STRAT --- Bullish sentiment jumps => Buy
+    bull_jump = (idx_sentiment.diff() > 0) & (idx_sentiment > 0)
+    bull_jump = bull_jump.astype(int) * idx_sentiment.diff().abs() * (1. - idx_sentiment / 100.)  # If sentiment is very high, dont react on jumps anymore
+    bull_tp = (idx_sentiment.diff() < 0) & (idx_sentiment > 0)
+    bull_tp = bull_tp.astype(int) * idx_sentiment.diff().abs() * (idx_sentiment / 100.) * 0.33  # take profit slower
+
+    # STRAT --- Bearish sentiment jumps => Sell
+    bear_jump = (idx_sentiment.diff() < 0) & (idx_sentiment < 0)
+    bear_jump = bear_jump.astype(int) * idx_sentiment.diff().abs() * (1. - idx_sentiment.abs() / 100.)  # If sentiment is very high, dont react on jumps anymore
+    bear_tp = (idx_sentiment.diff() > 0) & (idx_sentiment < 0)
+    bear_tp = bear_tp.astype(int) * idx_sentiment.diff().abs() * (idx_sentiment.abs() / 100.) * 0.33  # take profit slower
+
+
     # From buys and sells, weight them based on sentinemt:
-    idx_sentiment_abs = idx_sentiment.abs() / 100. * 1.5
+    idx_sentiment_abs = idx_sentiment.abs() / 100. * 1
     idx_sentiment_bull_abs = idx_sentiment.clip(lower=0).abs() / 100.
     idx_sentiment_bear_abs = idx_sentiment.clip(upper=0).abs() / 100.
 
-    scaled_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs
-    scaled_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs
+
+    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs + bull_jump + bear_tp
+    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs + bull_tp + bear_jump
 
 
 
-    scaled_buy = scaled_buy[mask_trading]
-    scaled_sell = scaled_sell[mask_trading]
+    total_buy = total_buy[mask_trading]
+    total_sell = total_sell[mask_trading]
     _traded_prices = prices_power[mask_trading]
 
-    _, open_volume = calculate_mtm_from_buy_sell(scaled_buy, scaled_sell)
-
+    _, open_volume = calculate_mtm_from_buy_sell(total_buy, total_sell)
 
 
     # Check boundaries on open_volume and adjust trading:
-    _idx_sentiment = idx_sentiment.clip(lower=-100).clip(upper=100) / 100.
-    _idx_sentiment = idx_sentiment / 100.
-    maximum = +10 * n_contracts
-    minimum = -10 * n_contracts
-    ind_sentiment = _idx_sentiment * n_contracts * 10. # * 0.75
-    _minimum = ind_sentiment + minimum
-    _maximum = ind_sentiment + maximum
+    maximum = pd.Series(index=idx_sentiment.index, data=100)
+    minimum = maximum * -1.
+    _idx_sentiment = (idx_sentiment * 2).clip(lower=-100).clip(upper=100)
+    _minimum = minimum + _idx_sentiment
+    _maximum = maximum + _idx_sentiment
     _minimum = _minimum.clip(upper=0)
     _maximum = _maximum.clip(lower=0)
 
@@ -144,8 +156,8 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
 
         vol = 1
         (vol*result_open_position).plot(ax=ax2, label="result_open_position", color="black")
-        (vol*scaled_buy).plot(ax=ax2, label="scaled_buy", color="green")
-        (vol*scaled_sell).plot(ax=ax2, label="scaled_sell", color="red")
+        (vol*total_buy).plot(ax=ax2, label="total_buy", color="green")
+        (vol*total_sell).plot(ax=ax2, label="total_sell", color="red")
         idx_sentiment.plot(ax=ax2, label="score_reduction", color="orange")
         (vol*_maximum).plot(ax=ax2, label="open_pos_maximum", color="black", linestyle="dotted")
         (vol*_minimum).plot(ax=ax2, label="open_pos_minimum", color="black", linestyle="dotted")
@@ -227,9 +239,9 @@ if __name__ == "__main__":
     df_prices_power = curves_power.resample(contract_sample).mean().T
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-    ts_contract = pd.Timestamp(date(2026, 10, 1), tz=tz)
-    ts_start_trading = ts_contract - MonthBegin(12)
-    mw_sizing = 10
+    ts_contract = pd.Timestamp(date(2027, 1, 1), tz=tz)
+    ts_start_trading = ts_contract - MonthBegin(9)
+    mw_sizing = 5
 
     mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=True)
 
@@ -269,7 +281,7 @@ if __name__ == "__main__":
     contract_sampling = "MS"
     start_n_month_before_del = 4
     hours = 24 * 30
-    mw_sizing = 4
+    mw_sizing = 6
     total_mtm_months, df_all_open_volume_months = run(contract_sampling, start_n_month_before_del, hours, mw_sizing)
 
 
