@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
         #  ----------------------------------------------  Market sentiment  ---------------------------------------
 
-        uuid = "fb856271-5499-5b06-95c8-52c51da0728b"
+        uuid = "167d5ea5-4abe-5b03-b2d7-b7877b995bb1"
         ask_and_answer_for_uuid(topic, uuid=uuid, use_ai=True)
         txt = topic.load_llm_answer(uuid)
         print(txt)

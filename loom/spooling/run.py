@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # ------------------------------------------  Work mode  ---------------------------------------------------------
     scrape_for_new_articles = True
-    scrape_for_new_articles = True
+    scrape_for_new_articles = False
 
     use_ai = True
     #use_ai = False
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     topic3 = T03_Gas_Fuel()
     topic11 = T11_US_Stocks()
 
-    days_back_in_time = 25
+    days_back_in_time = 1
 
     print("\n Check for new aricles to be processed by AI \n")
 
