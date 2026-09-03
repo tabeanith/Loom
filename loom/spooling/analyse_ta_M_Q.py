@@ -79,17 +79,18 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     sellY = (prices_power > middle).astype(int) * 2 * n_contracts
 
 
-    # STRAT --- Bullish sentiment jumps => Buy
-    bull_jump = (idx_sentiment.diff() > 0) & (idx_sentiment > 0)
-    bull_jump = bull_jump.astype(int) * idx_sentiment.diff().abs() * (1. - idx_sentiment / 100.)  # If sentiment is very high, dont react on jumps anymore
-    bull_tp = (idx_sentiment.diff() < 0) & (idx_sentiment > 0)
-    bull_tp = bull_tp.astype(int) * idx_sentiment.diff().abs() * (idx_sentiment / 100.) * 0.33  # take profit slower
+    if False:
+        # STRAT --- Bullish sentiment jumps => Buy
+        bull_jump = (idx_sentiment.diff() > 0) & (idx_sentiment > 0)
+        bull_jump = bull_jump.astype(int) * idx_sentiment.diff().abs() * (1. - idx_sentiment / 100.)  # If sentiment is very high, dont react on jumps anymore
+        bull_tp = (idx_sentiment.diff() < 0) & (idx_sentiment > 0)
+        bull_tp = bull_tp.astype(int) * idx_sentiment.diff().abs() * (idx_sentiment / 100.) * 0.33  # take profit slower
 
-    # STRAT --- Bearish sentiment jumps => Sell
-    bear_jump = (idx_sentiment.diff() < 0) & (idx_sentiment < 0)
-    bear_jump = bear_jump.astype(int) * idx_sentiment.diff().abs() * (1. - idx_sentiment.abs() / 100.)  # If sentiment is very high, dont react on jumps anymore
-    bear_tp = (idx_sentiment.diff() > 0) & (idx_sentiment < 0)
-    bear_tp = bear_tp.astype(int) * idx_sentiment.diff().abs() * (idx_sentiment.abs() / 100.) * 0.33  # take profit slower
+        # STRAT --- Bearish sentiment jumps => Sell
+        bear_jump = (idx_sentiment.diff() < 0) & (idx_sentiment < 0)
+        bear_jump = bear_jump.astype(int) * idx_sentiment.diff().abs() * (1. - idx_sentiment.abs() / 100.)  # If sentiment is very high, dont react on jumps anymore
+        bear_tp = (idx_sentiment.diff() > 0) & (idx_sentiment < 0)
+        bear_tp = bear_tp.astype(int) * idx_sentiment.diff().abs() * (idx_sentiment.abs() / 100.) * 0.33  # take profit slower
 
 
     # From buys and sells, weight them based on sentiment:
@@ -98,8 +99,8 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     idx_sentiment_bear_abs = idx_sentiment.clip(upper=0).abs() / 100.
 
 
-    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs# + buyY * idx_sentiment_bear_abs + bull_jump + bear_tp
-    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs# + sellY * idx_sentiment_bear_abs + bull_tp + bear_jump
+    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs #+ bull_jump + bear_tp
+    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs #+ bull_tp + bear_jump
 
 
 
