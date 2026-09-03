@@ -267,8 +267,3 @@ if __name__ == "__main__":
 
 
 
-    uuid = "40fa1342-a1d7-5655-b761-3ca6476c0970"
-    txt = T03_Gas_Fuel().load_llm_answer(uuid)
-
-
-

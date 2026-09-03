@@ -42,7 +42,7 @@ tz = "Europe/Berlin"
 
 
 
-def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False):
+def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum: int, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=False):
     n_contracts = max(1, mw_sizing)
 
     # ---------------------- Get prices and sentiment -----------------------------
@@ -66,19 +66,15 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
     buys = (prices_power < lower).astype(int) * n_contracts
     sells = (prices_power > upper).astype(int) * n_contracts
 
-    # TODO: Bull run on sentiment. Implement the same for bear run
-
-    # STRAT --- Bullish buying
+    # STRAT --- Buying on positive sentiment
     past = (prices_power > upper).astype(int).rolling(5).mean() > 0.75
-    sellsingular = (prices_power < middle)
+    sellsingular = (prices_power < middle).astype(int).diff() > 0
     sellX = (past & sellsingular).astype(int) * 10 * n_contracts
     buyX = (prices_power < middle).astype(int) * 2 * n_contracts
 
-    # TODO: Bear run on sentiment!!! -> CHECK THAT THIS mirrors bull case
-
-    # STRAT --- Bearish buying
+    # STRAT --- Selling on negative sentiment
     past = (prices_power < lower).astype(int).rolling(5).mean() > 0.75
-    buysingular = (prices_power > middle)
+    buysingular = (prices_power > middle).astype(int).diff() > 0
     buyY = (past & buysingular).astype(int) * 10 * n_contracts
     sellY = (prices_power > middle).astype(int) * 2 * n_contracts
 
@@ -96,8 +92,8 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
     bear_tp = bear_tp.astype(int) * idx_sentiment.diff().abs() * (idx_sentiment.abs() / 100.) * 0.33  # take profit slower
 
 
-    # From buys and sells, weight them based on sentinemt:
-    idx_sentiment_abs = idx_sentiment.abs() / 100. * 1
+    # From buys and sells, weight them based on sentiment:
+    idx_sentiment_abs = idx_sentiment.abs() / 100.
     idx_sentiment_bull_abs = idx_sentiment.clip(lower=0).abs() / 100.
     idx_sentiment_bear_abs = idx_sentiment.clip(upper=0).abs() / 100.
 
@@ -122,6 +118,8 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
     _maximum = maximum + _idx_sentiment  # 200
     _minimum = _minimum.clip(upper=0)
     _maximum = _maximum.clip(lower=0)
+    _minimum = _minimum / 200. * mw_maximum
+    _maximum = _maximum / 200. * mw_maximum
 
 
     open_volume_bounded = get_bounded_open_volume(open_volume, _maximum, _minimum)
@@ -242,22 +240,23 @@ if __name__ == "__main__":
     ts_contract = pd.Timestamp(date(2027, 1, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(9)
     mw_sizing = 5
+    mw_maximum = 100
 
-    mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=True)
+    mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, mw_maximum, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=True)
 
 
 
-    def run(contract_sampling, start_n_month_before_del, hours, mw_sizing):
+    def run(contract_sampling, start_n_month_before_del, hours, mw_sizing, mw_maximum):
         all_mtm = []
         all_open_volume = []
 
         df_prices_power = curves_power.resample(contract_sampling).mean().T
         df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-        for ts_contract in pd.date_range(pd.Timestamp(date(2026, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
+        for ts_contract in pd.date_range(pd.Timestamp(date(2026, 10, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
             ts_start_trading = ts_contract - MonthBegin(start_n_month_before_del)
 
-            mtm, open_volume = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, df_prices_power,
+            mtm, open_volume = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, mw_maximum, df_prices_power,
                                              df_contract_sentiment, df_scores, map_contract_to_score,
                                              force_close_delivery=False, show_plot=False)
             all_mtm.append(mtm * hours)
@@ -281,8 +280,9 @@ if __name__ == "__main__":
     contract_sampling = "MS"
     start_n_month_before_del = 4
     hours = 24 * 30
-    mw_sizing = 6
-    total_mtm_months, df_all_open_volume_months = run(contract_sampling, start_n_month_before_del, hours, mw_sizing)
+    mw_sizing = 5
+    mw_maximum = 75
+    total_mtm_months, df_all_open_volume_months = run(contract_sampling, start_n_month_before_del, hours, mw_sizing, mw_maximum)
 
 
 
@@ -290,7 +290,8 @@ if __name__ == "__main__":
     start_n_month_before_del = 9
     hours = 24 * 30 * 3
     mw_sizing = 2
-    total_mtm_quarters, df_all_open_volume_quarters = run(contract_sampling, start_n_month_before_del, hours, mw_sizing)
+    mw_maximum = 25
+    total_mtm_quarters, df_all_open_volume_quarters = run(contract_sampling, start_n_month_before_del, hours, mw_sizing, mw_maximum)
 
 
 
