@@ -107,7 +107,7 @@ class Reuters(UniversalScraper):
 
                         _uuid = uuid.uuid5(uuid.NAMESPACE_DNS, link)
                         if self.check_if_scrap_already_exists(_uuid):
-                            print("Already scraped:", link)
+                            print("Already scraped:", _uuid, link)
                             continue
 
                         # -------------------------------------- Scrap article -----------------------------------------

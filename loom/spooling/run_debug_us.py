@@ -47,7 +47,7 @@ if __name__ == "__main__":
     if True:
 
         #  ----------------------------------------------  Market prices  ------------------------------------------
-        ts_go = pd.Timestamp(date(2026, 1, 1), tz=tz)
+        ts_go = pd.Timestamp(date(2026, 8, 1), tz=tz)
 
         symbol = "ES"
         #symbol = "MGC"
@@ -56,6 +56,7 @@ if __name__ == "__main__":
         _df = df[df.index > ts_go]
         prices = _df["open"].resample("h").first()
         prices = _df["open"].resample("h").first()
+        prices = prices.dropna()
 
 
         #  ----------------------------------------------  Market sentiment  ---------------------------------------
@@ -75,36 +76,36 @@ if __name__ == "__main__":
 
         #  ----------------------------------------------  Strats  -------------------------------------------------
 
-        pricesQ = numba_rolling_quantile_q_value(prices.to_numpy(dtype=np.float32), 24*12)
+        pricesQ = numba_rolling_quantile_q_value(prices.to_numpy(dtype=np.float32), 24*2)
         pricesQ = pd.Series(index=prices.index, data=pricesQ)
 
         _maximum = pd.Series(index=sentiment.index, data=200)
         _minimum = _maximum * -1.
 
-        buys = ( (pricesQ < 0.3)).astype(int) * 2
+        buys = ( (pricesQ < 0.3)).astype(int) * 1
         sells = (  (pricesQ > 0.7)).astype(int) * 1
 
         mtm, open_volume = calculate_mtm_from_buy_sell(buys, sells, prices)
-        _open_volume = (open_volume / 10.).astype(int) * 2.
+        _open_volume = (open_volume / 1.).astype(int) * 2.
         open_volume_bounded = get_bounded_open_volume(_open_volume, _maximum, _minimum)
         mtm1, open_volume1 = calculate_mtm_from_open_position(open_volume_bounded / 200. * 10., prices)
 
 
 
-        buys1 = sentiment_mkt.clip(lower=0)
-        sells1 = sentiment_mkt.clip(upper=0)
+        buys1 = sentiment_bull.diff().clip(lower=0)
+        sells1 = sentiment_bear.diff().clip(upper=0) * -1.
         mtm, open_volume = calculate_mtm_from_buy_sell(buys1, sells1, prices)
-        _open_volume = (open_volume / 10.).astype(int) * 2.
+        _open_volume = (open_volume / 1.).astype(int) * 5.
         open_volume_bounded = get_bounded_open_volume(_open_volume, _maximum, _minimum)
-        mtm2, open_volume2 = calculate_mtm_from_open_position(open_volume_bounded / 200. * 10., prices)
+        mtm2, open_volume2 = calculate_mtm_from_open_position(open_volume_bounded / 250. * 10., prices)
 
 
 
 
 
 
-        result_mtm = mtm1 #+ mtm2
-        result_open_volume = open_volume1#+ open_volume2
+        result_mtm = mtm1  #+ mtm2
+        result_open_volume = open_volume1 #+ open_volume2
         print("mtm", result_mtm.iloc[-1])
         print("pips trading", result_mtm.iloc[-1] / result_open_volume[result_open_volume != 0].abs().mean())
         print("pips market", prices.iloc[-1] - prices.iloc[0])
@@ -112,7 +113,7 @@ if __name__ == "__main__":
 
         #  ----------------------------------------------  Plot  -------------------------------------------------
 
-        fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, sharex=True)
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4, sharex=True)
         scores = df_result["score"]
 
         prices.plot(ax=ax1, label="open", color="black")
@@ -123,12 +124,14 @@ if __name__ == "__main__":
         sentiment.plot(ax=ax2, label="sentiment", color="orange")
         ax2.axhline(y=0, color='black', linewidth=0.8, linestyle='-')
 
-        result_open_volume.plot(ax=ax2, label="open_volume", color="blue")
         _maximum.plot(ax=ax2, label="mtm", color="blue", linestyle='--')
         _minimum.plot(ax=ax2, label="mtm", color="blue", linestyle='--')
 
 
-        result_mtm.plot(ax=ax3, label="mtm", color="black")
+        result_open_volume.plot(ax=ax3, label="open_volume", color="blue")
+        ax3.axhline(y=0, color='black', linewidth=0.8, linestyle='-')
+
+        result_mtm.plot(ax=ax4, label="mtm", color="black")
 
 
 
