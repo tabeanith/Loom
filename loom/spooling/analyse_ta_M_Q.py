@@ -118,8 +118,8 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
     maximum = pd.Series(index=idx_sentiment.index, data=100)
     minimum = maximum * -1.
     _idx_sentiment = (idx_sentiment * 2).clip(lower=-100).clip(upper=100)
-    _minimum = minimum + _idx_sentiment
-    _maximum = maximum + _idx_sentiment
+    _minimum = minimum + _idx_sentiment  # -200
+    _maximum = maximum + _idx_sentiment  # 200
     _minimum = _minimum.clip(upper=0)
     _maximum = _maximum.clip(lower=0)
 
