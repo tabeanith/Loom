@@ -98,8 +98,8 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     idx_sentiment_bear_abs = idx_sentiment.clip(upper=0).abs() / 100.
 
 
-    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs + bull_jump + bear_tp
-    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs + bull_tp + bear_jump
+    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs# + buyY * idx_sentiment_bear_abs + bull_jump + bear_tp
+    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs# + sellY * idx_sentiment_bear_abs + bull_tp + bear_jump
 
 
 
@@ -253,7 +253,7 @@ if __name__ == "__main__":
         df_prices_power = curves_power.resample(contract_sampling).mean().T
         df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-        for ts_contract in pd.date_range(pd.Timestamp(date(2026, 10, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
+        for ts_contract in pd.date_range(pd.Timestamp(date(2026, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
             ts_start_trading = ts_contract - MonthBegin(start_n_month_before_del)
 
             mtm, open_volume = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, mw_maximum, df_prices_power,
@@ -281,7 +281,7 @@ if __name__ == "__main__":
     start_n_month_before_del = 4
     hours = 24 * 30
     mw_sizing = 5
-    mw_maximum = 75
+    mw_maximum = 100
     total_mtm_months, df_all_open_volume_months = run(contract_sampling, start_n_month_before_del, hours, mw_sizing, mw_maximum)
 
 
@@ -290,7 +290,7 @@ if __name__ == "__main__":
     start_n_month_before_del = 9
     hours = 24 * 30 * 3
     mw_sizing = 2
-    mw_maximum = 25
+    mw_maximum = 30
     total_mtm_quarters, df_all_open_volume_quarters = run(contract_sampling, start_n_month_before_del, hours, mw_sizing, mw_maximum)
 
 
