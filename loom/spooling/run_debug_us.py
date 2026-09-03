@@ -24,6 +24,7 @@ from loom.utils.kernel import numba_rolling_quantile_q_value
 
 import pandas as pd
 import numpy as np
+from datetime import date
 from pandas.tseries.offsets import Day
 tz = "Europe/Berlin"
 
@@ -42,6 +43,20 @@ if __name__ == "__main__":
 
     # For debugging only
     if True:
+
+        #  ----------------------------------------------  Market prices  ------------------------------------------
+        ts_go = pd.Timestamp(date(2026, 8, 1), tz=tz)
+
+        symbol = "NQ"
+        symbol = "MGC"
+        tf = "5min"
+        df = read_dataframe(symbol, tf)
+        _df = df[df.index > ts_go]
+        prices = _df["open"].resample("h").first()
+
+
+        #  ----------------------------------------------  Market sentiment  ---------------------------------------
+
         uuid = "fb856271-5499-5b06-95c8-52c51da0728b"
         ask_and_answer_for_uuid(topic, uuid=uuid, use_ai=True)
         txt = topic.load_llm_answer(uuid)
@@ -49,21 +64,14 @@ if __name__ == "__main__":
         df_ref = load_references(scraper.get_folder())
         df_result = topic.calculate_scores(df_ref)
 
-        symbol = "NQ"
-        tf = "5min"
-        df = read_dataframe(symbol, tf)
-        _df = df[df.index > df_result.index[-1]]
-        prices = _df["open"].resample("h").first()
-
         sentiment = calculate_sentiment_v1(df_result, prices, 7)
         sentiment_bull = calculate_sentiment_v1(df_result[df_result["score"] > 0], prices,  7)
         sentiment_bear = calculate_sentiment_v1(df_result[df_result["score"] < 0], prices,  7)
         sentiment_diff = sentiment_bull.reindex(df_result.index).ffill().diff() + sentiment_bear.reindex(df_result.index).ffill().diff()
 
 
-
-
         #  ----------------------------------------------  Strats  -------------------------------------------------
+
         pricesQ = numba_rolling_quantile_q_value(prices.to_numpy(dtype=np.float32), 24*5)
         pricesQ = pd.Series(index=prices.index, data=pricesQ)
 
@@ -77,8 +85,7 @@ if __name__ == "__main__":
         print(mtm.iloc[-1])
 
 
-
-
+        #  ----------------------------------------------  Plot  -------------------------------------------------
 
         fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, sharex=True)
         scores = df_result["score"]
