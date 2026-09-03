@@ -45,10 +45,10 @@ if __name__ == "__main__":
     if True:
 
         #  ----------------------------------------------  Market prices  ------------------------------------------
-        ts_go = pd.Timestamp(date(2026, 8, 1), tz=tz)
+        ts_go = pd.Timestamp(date(2026, 7, 1), tz=tz)
 
         symbol = "NQ"
-        symbol = "MGC"
+        #symbol = "MGC"
         tf = "5min"
         df = read_dataframe(symbol, tf)
         _df = df[df.index > ts_go]
@@ -75,8 +75,11 @@ if __name__ == "__main__":
         pricesQ = numba_rolling_quantile_q_value(prices.to_numpy(dtype=np.float32), 24*5)
         pricesQ = pd.Series(index=prices.index, data=pricesQ)
 
-        buys = (sentiment < 0) & (pricesQ < 0.2)
-        sells = (sentiment < 0) & (pricesQ > 0.8)
+        buys = (sentiment < 0) & (pricesQ < 0.3)
+        sells = (sentiment < 0) & (pricesQ > 0.7)
+
+        buys = (pricesQ < 0.3)
+        sells = (pricesQ > 0.7)
         _mtm, _open_volume = calculate_mtm_from_buy_sell(buys, sells, prices)
         _open_volume = (_open_volume / 10.).astype(int)
 
@@ -96,6 +99,7 @@ if __name__ == "__main__":
         sentiment_bull.plot(ax=ax2, label="sentiment_bull", color="green")
         (-sentiment_bear).plot(ax=ax2, label="sentiment_bear", color="red")
         sentiment.plot(ax=ax2, label="sentiment", color="orange")
+        ax2.axhline(y=0, color='black', linewidth=0.8, linestyle='-')
 
         open_volume.plot(ax=ax2, label="open_volume", color="blue")
 

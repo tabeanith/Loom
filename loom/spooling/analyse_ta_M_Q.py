@@ -31,6 +31,8 @@ from loom.data.curves.get import extend_snapshot_days_to_today
 from loom.spooling.analyse_scores import calculate_sentiment_vn
 from loom.spooling.analyse_utils import calculate_mtm_from_buy_sell
 from loom.spooling.analyse_utils import calculate_mtm_from_open_position
+from loom.spooling.analyse_utils import get_bounded_open_volume
+from loom.spooling.analyse_utils import get_delivery_adjusted_open_volume
 
 
 
@@ -94,7 +96,7 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
     scaled_sell = scaled_sell[mask_trading]
     _traded_prices = prices_power[mask_trading]
 
-    mtm, open_volume = calculate_mtm_from_buy_sell(scaled_buy, scaled_sell, _traded_prices)
+    _, open_volume = calculate_mtm_from_buy_sell(scaled_buy, scaled_sell)
 
 
 
@@ -110,65 +112,14 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, df_prices_
     _maximum = _maximum.clip(lower=0)
 
 
-    if len(open_volume) > 0:
-        bounded_volume = pd.Series(index=open_volume.index, data=0.)
-        open_volume_change = open_volume.diff()
-        open_volume_change.iloc[0] = open_volume.iloc[0]
-        _minimum = _minimum.reindex(open_volume.index)
-        _maximum = _maximum.reindex(open_volume.index)
-
-        bounded_volume.iloc[0] = open_volume.iloc[0]
-        for i, change in enumerate(open_volume_change.values):
-            if i == 0: continue
-            prev = bounded_volume.iloc[i-1]
-            new = prev + change
-            maxval = _maximum.iloc[i]
-            minval = _minimum.iloc[i]
-            if new > maxval:
-                bounded_volume.iloc[i] = maxval
-            elif new < minval:
-                bounded_volume.iloc[i] = minval
-            else:
-                bounded_volume.iloc[i] = new
-
-        _bounded_volume = bounded_volume.reindex(_traded_prices.index)
-        mtm2, open_volume_tbc = calculate_mtm_from_open_position(_bounded_volume, _traded_prices)
-    else:
-        open_volume_tbc = open_volume
-
-    # TODO: Delivery logic
-    open_volume_tbc = open_volume_tbc.reindex(index=prices_power.index)
-    ts_last_trading_days = ts_contract - BDay(5)
-    mask_last_trading_week = (open_volume_tbc.index >= ts_last_trading_days) & (open_volume_tbc.index < ts_contract)
-    final_positions = open_volume_tbc[mask_last_trading_week]
-    final_sentiment = idx_sentiment[mask_last_trading_week]
-
-    if (not final_positions.empty) and (not final_sentiment.empty):
-        x_pos = final_positions.mean()
-        x_sen = final_sentiment.mean()
-        print(f"Contract {ts_contract} --- Delivery Check: {x_pos} MW, sentiment {x_sen}")
-
-        if (x_pos > 0) & (x_sen > 33) & (not force_close_delivery):  # TODO: pick sensible values
-            print(f"Contract {ts_contract}: Take into delivery")
-        elif (x_pos < 0) & (x_sen < 0) & (not force_close_delivery):  # TODO: pick sensible values
-            print(f"Contract {ts_contract}: Take into delivery")
-        else:
-            print(f"Contract {ts_contract}: Close positions before delivery")
-            # Mismatch: Start closing the position:
-            position_at_first = final_positions.iloc[0]
-            tdays_left_until_delivery = (final_positions.index - ts_contract).days * -1
-            position_target = position_at_first * (tdays_left_until_delivery - 1.) / 5.
-            position_target = position_target.astype(int)
-            # Start closing
-            open_volume_tbc.loc[mask_last_trading_week] = position_target.values
-    else:
-        print(f"Contract {ts_contract}: Too far away from delivery (or no sentiment avail)", final_positions.empty, final_sentiment.empty)
-
+    open_volume_bounded = get_bounded_open_volume(open_volume, _maximum, _minimum)
+    open_volume_bounded = open_volume_bounded.reindex(index=prices_power.index).ffill().fillna(0)
 
     # Recalculate buys and sells -- Either way the position is unchanged into delivery, or adjusted, but we have to calculate the pnl into delivery anyway
-    open_volume_tbfin = open_volume_tbc.ffill().fillna(0)
+    open_volume_delived = get_delivery_adjusted_open_volume(ts_contract, open_volume_bounded, idx_sentiment, force_close_delivery=force_close_delivery)
+    open_volume_delived = open_volume_delived.ffill().fillna(0)
 
-    result_mtm, result_open_position = calculate_mtm_from_open_position(open_volume_tbfin, _traded_prices)
+    result_mtm, result_open_position = calculate_mtm_from_open_position(open_volume_delived, _traded_prices)
     result_mtm = result_mtm.reindex(index=prices_power.index).ffill().fillna(0)
 
     result_mtm.name = ts_contract
