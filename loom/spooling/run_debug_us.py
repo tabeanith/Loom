@@ -47,7 +47,7 @@ if __name__ == "__main__":
     if True:
 
         #  ----------------------------------------------  Market prices  ------------------------------------------
-        ts_go = pd.Timestamp(date(2026, 8, 20), tz=tz)
+        ts_go = pd.Timestamp(date(2026, 8, 1), tz=tz)
 
         symbol = "ES"
         #symbol = "MGC"
@@ -72,20 +72,6 @@ if __name__ == "__main__":
         df_result["hours"] = df_result.index.ceil("5min")
         scoreH = df_result.groupby(by="hours")["score"].mean()
         sentimentH = df_result.groupby(by="hours")["sentiment"].mean()
-
-        scoreH.plot(label = "scoreH")
-        sentimentH.plot(label = "sentimentH")
-
-        fig, (ax1, ax2) = plt.subplots(nrows=2, sharex=True)
-        _df["open"].plot(ax=ax1, color="black", label="market")
-
-        scoreH.rolling(12).mean().plot(ax=ax2, label="scoreH mean")
-        sentimentH.rolling(12).mean().plot(ax=ax2, label="sentimentH mean")
-        df_result["score"].rolling(6).mean().plot(ax=ax2)
-        df_result["sentiment"].rolling(6).mean().plot(ax=ax2)
-        plt.legend()
-        plt.show()
-
 
 
         #  ----------------------------------------------  Strats  -------------------------------------------------
@@ -118,8 +104,8 @@ if __name__ == "__main__":
 
 
 
-        result_mtm = mtm1  + mtm2
-        result_open_volume = open_volume1  + open_volume2
+        result_mtm = mtm2
+        result_open_volume = open_volume2
         print("mtm", result_mtm.iloc[-1])
         print("pips trading", result_mtm.iloc[-1] / result_open_volume[result_open_volume != 0].abs().mean())
         print("pips market", prices.iloc[-1] - prices.iloc[0])
@@ -133,7 +119,8 @@ if __name__ == "__main__":
         prices.plot(ax=ax1, label="open", color="black")
         ax2.scatter(x=scores.index, y=scores.values, label="scores", marker='o', linestyle='None')
         ax2.stem(scores.index, scores.values)
-        #sentiment_bull.plot(ax=ax2, label="sentiment_bull", color="green")
+        scoreH.plot(ax=ax2, label="scoreH", color="green")
+        sentimentH.plot(ax=ax2, label="sentimentH", color="cyan")
        # (-sentiment_bear).plot(ax=ax2, label="sentiment_bear", color="red")
         #sentiment.plot(ax=ax2, label="sentiment", color="orange")
         ax2.axhline(y=0, color='black', linewidth=0.8, linestyle='-')

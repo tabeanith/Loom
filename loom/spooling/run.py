@@ -23,8 +23,8 @@ tz = "Europe/Berlin"
 if __name__ == "__main__":
 
     # ------------------------------------------  Work mode  ---------------------------------------------------------
-    scrape_for_new_articles = True
     scrape_for_new_articles = False
+    scrape_for_new_articles = True
 
     use_ai = True
     #use_ai = False
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     if scrape_for_new_articles:
 
         # US Interest Rates
-        Reuters().run_scraper_to_topic_pipeline(["fed", "hawkish", "dovish"], topic10)
+        Reuters().run_scraper_to_topic_pipeline(["fed", "hawkish", "dovish", "nonfarm payroll"], topic10)
 
         # EU weather
         SevereWeatherEurope().run_scraper_to_topic_pipeline(topic2)
@@ -58,17 +58,9 @@ if __name__ == "__main__":
 
     # -------------------------  Check relevant topics and reviewing -------------------------------------------------
 
-    days_back_in_time = 10
+    days_back_in_time = 5
 
     print("\n Check for new aricles to be processed by AI \n")
-
-    # Go through all topics
-    for topic in [topic3]:
-        ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True)
-
-
-
-
 
     for topic in [topic10]:
         ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True)
