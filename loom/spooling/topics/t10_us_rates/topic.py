@@ -126,7 +126,7 @@ class T10_US_Rates(UniversalTopic):
                 Probability of decrease: y (y [percentage value])
 
                 Q05. Focus on the very latest information: What is the sentiment/tone including the very latest information on US interest rates?
-                Difference: x (x on a scale of -100 [More dovish than before] to 100 [More hawkish than before])
+                Sentiment: x (x on a scale of -100 [More dovish than before] to 100 [More hawkish than before])
                 """
 
         return message
@@ -166,40 +166,42 @@ class T10_US_Rates(UniversalTopic):
 
                 relevance_to_us = extract_answer_yes_no(parts[1], "relevance")
 
-                inc_magnitude = extract_answer_multiple_floats(parts[2], "increasing rates magnitude")
-                inc_st = extract_answer_yes_no(parts[2], "increasing rates short")
-                inc_lt = extract_answer_yes_no(parts[2], "increasing rates long")
-                inc_expectancy = extract_answer_int(parts[3], "expectancy")
+                inc_rel = extract_answer_int(parts[2], "relevance")
+                inc_prb = extract_answer_int(parts[2], "probability")
 
-                dec_magnitude = extract_answer_multiple_floats(parts[4], "decreasing rates magnitude")
-                dec_st = extract_answer_yes_no(parts[4], "decreasing rates short")
-                dec_lt = extract_answer_yes_no(parts[4], "decreasing rates long")
-                dec_expectancy = extract_answer_int(parts[5], "expectancy") if not np.nan else 0
+                hld_rel = extract_answer_int(parts[3], "relevance")
+                hld_prb = extract_answer_int(parts[3], "probability")
 
-                bull_impact = extract_answer_yes_no(parts[6], "explicit")
-                bull_score = extract_answer_int(parts[6], "impact")
+                dec_rel = extract_answer_int(parts[4], "relevance")
+                dec_prb = extract_answer_int(parts[4], "probability")
 
-                bear_impact = extract_answer_yes_no(parts[7], "explicit")
-                bear_score = extract_answer_int(parts[7], "impact")
+                sentiment = extract_answer_int(parts[5], "sentiment")
 
 
-                inc_score = (inc_st + inc_lt) * inc_expectancy * -1  # Increasing Rates means bearish market
-                dec_score = (dec_st + dec_lt) * dec_expectancy
-                market_score = bull_impact * bull_score - bear_impact * bear_score
+                inc_score = inc_rel * inc_prb / 100. * -1.
+                hdl_score = hld_rel * hld_prb / 100.
+                dec_score = dec_rel * dec_prb / 100.
+
+                if inc_score > dec_score:
+                    hdl_score = hdl_score * 1.
+                if dec_score > inc_score:
+                    hdl_score = hdl_score * -1.
 
                 inc_score = 0 if np.isnan(inc_score) else inc_score
                 dec_score = 0 if np.isnan(dec_score) else dec_score
-                market_score = 0 if np.isnan(market_score) else market_score
+                hdl_score = 0 if np.isnan(hdl_score) else hdl_score
 
-                score = (inc_score + dec_score + market_score) * 0.5
+                score = inc_score + dec_score + hdl_score
 
                 # If article is not relevant to US, cancel the score
                 if np.isnan(relevance_to_us) or (relevance_to_us < 1):
                     score = np.nan
+                    sentiment = np.nan
 
                 results.append({
                     "timestamp": timestamp,
                     "score": score,
+                    "sentiment": sentiment,
                     "topic": self.get_name(),
                     "title": title,
                     "uuid": uuid,
