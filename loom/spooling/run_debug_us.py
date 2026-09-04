@@ -54,8 +54,8 @@ if __name__ == "__main__":
         tf = "5min"
         df = read_dataframe(symbol, tf)
         _df = df[df.index > ts_go]
-        prices = _df["open"].resample("h").first()
-        prices = _df["open"].resample("h").first()
+        prices = _df["open"].resample("5min").first()
+        prices = _df["open"].resample("5min").first()
         prices = prices.dropna()
 
 
@@ -73,11 +73,8 @@ if __name__ == "__main__":
         scoreH = df_result.groupby(by="hours")["score"].mean()
         sentimentH = df_result.groupby(by="hours")["sentiment"].mean()
 
-        scoreH = scoreH.rolling(12).mean()
-        sentimentH = sentimentH.rolling(12).mean()
-
-        scoreH = scoreH.reindex(prices.index).ffill()
-        sentimentH = sentimentH.reindex(prices.index).ffill()
+        #scoreH = scoreH.rolling(12).mean()
+        #sentimentH = sentimentH.rolling(12).mean()
 
         #  ----------------------------------------------  Strats  -------------------------------------------------
 
