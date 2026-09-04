@@ -87,8 +87,9 @@ def get_delivery_adjusted_open_volume(ts_contract, open_volume, sentiment, force
 
 
 def calculate_mtm_from_buy_sell(buy_dirac, sell_dirac, prices: pd.Series=None):
-    buy_dirac = buy_dirac.reindex(prices.index)
-    sell_dirac = sell_dirac.reindex(prices.index)
+    if prices is not None:
+        buy_dirac = buy_dirac.reindex(prices.index)
+        sell_dirac = sell_dirac.reindex(prices.index)
 
     buy_dirac = buy_dirac.fillna(0).astype(int)  # Covert floats to integer
     sell_dirac = sell_dirac.fillna(0).astype(int)  # Covert floats to integer
