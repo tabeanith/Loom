@@ -69,8 +69,18 @@ if __name__ == "__main__":
         df_result = topic.calculate_scores(df_ref)
         df_result = df_result.dropna(axis=0)
 
-        df_result["score"].rolling(24).mean().plot()
-        df_result["sentiment"].rolling(24).mean().plot()
+        df_result["hours"] = df_result.index.ceil("5min")
+        scoreH = df_result.groupby(by="hours")["score"].mean()
+        sentimentH = df_result.groupby(by="hours")["sentiment"].mean()
+
+        scoreH.plot(label = "scoreH")
+        sentimentH.plot(label = "sentimentH")
+
+        df_result["score"].rolling(12).mean().plot()
+        df_result["sentiment"].rolling(12).mean().plot()
+        scoreH.rolling(12).mean().plot(label="scoreH mean")
+        sentimentH.rolling(12).mean().plot(label="sentimentH mean")
+        plt.legend()
         plt.show()
 
 

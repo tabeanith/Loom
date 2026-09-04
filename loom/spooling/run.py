@@ -23,8 +23,8 @@ tz = "Europe/Berlin"
 if __name__ == "__main__":
 
     # ------------------------------------------  Work mode  ---------------------------------------------------------
-    scrape_for_new_articles = False
     scrape_for_new_articles = True
+    scrape_for_new_articles = False
 
     use_ai = True
     #use_ai = False
@@ -61,6 +61,14 @@ if __name__ == "__main__":
     days_back_in_time = 10
 
     print("\n Check for new aricles to be processed by AI \n")
+
+    # Go through all topics
+    for topic in [topic3]:
+        ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True)
+
+
+
+
 
     for topic in [topic10]:
         ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True)
