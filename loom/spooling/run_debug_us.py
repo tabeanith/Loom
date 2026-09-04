@@ -9,6 +9,7 @@ from loom.data.ibkr.api import read_dataframe
 from loom.spooling.topics.t01_eu_power.topic import T01_EU_Power
 from loom.spooling.topics.t02_weather.topic import T02_Weather
 from loom.spooling.topics.t03_gas_fuel.topic import T03_Gas_Fuel
+from loom.spooling.topics.t10_us_rates.topic import T10_US_Rates
 from loom.spooling.topics.t11_us_stocks.topic import T11_US_Stocks
 
 from loom.spooling.llm.ask_and_answer import TBD_ask_and_save_answer
@@ -40,7 +41,7 @@ from matplotlib import pyplot as plt
 
 if __name__ == "__main__":
 
-    topic = T11_US_Stocks()
+    topic = T10_US_Rates()
     scraper = Reuters()
 
     # For debugging only
