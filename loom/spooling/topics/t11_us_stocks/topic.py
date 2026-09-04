@@ -8,7 +8,7 @@ import json
 import re
 
 from loom.spooling.topics.universal_topic import UniversalTopic
-from loom.spooling.source.universal_scraper import find_scraped_article_content
+from loom.utils.files import find_scraped_article_content
 
 from loom.spooling.topics.extraction import extract_q, roll_qs_to_months
 from loom.spooling.topics.extraction import extract_answer_int

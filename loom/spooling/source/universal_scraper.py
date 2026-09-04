@@ -1,16 +1,12 @@
-
-import numpy as np
 import pandas as pd
-import uuid
 from pathlib import Path
 import os
 import json
 
-from loom.spooling.source.references import update_references
 from loom.spooling.source.references import load_references
 from loom.spooling.source.references import save_references
 
-from loom.utils.text import count_words, count_keywords
+from loom.utils.analyse_strings import count_words
 
 pd.set_option('display.max_rows', 10000)
 pd.set_option('display.max_columns', 500)
@@ -18,21 +14,6 @@ pd.set_option('display.width', 10000)
 pd.set_option('display.max_colwidth', None)
 
 tz = "Europe/Berlin"
-
-
-def find_scraped_article_content(uuid: str):
-    path = Path(__file__).parent.resolve()
-    subdirectories = [item for item in os.listdir(path) if os.path.isdir(path)]
-
-    for subdir in subdirectories:
-        file_path = path / subdir / "scraps" / f"{uuid}.json"
-
-        if file_path.is_file():
-            with open(file_path, "r") as f:
-                data = json.load(f)
-                return data.get("text", "")
-
-    return ""
 
 
 class UniversalScraper(object):
@@ -87,7 +68,7 @@ class UniversalScraper(object):
 
 
     def run_scraper(self):
-        raise NotImplemented
+        pass
 
 
     def get_scraped_article_content(self, uuid: str):

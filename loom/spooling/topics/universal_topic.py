@@ -1,6 +1,8 @@
 from pathlib import Path
 import json
 import os
+import shutil
+from loom.utils.files import find_scraped_article_filepath
 
 
 class UniversalTopic():
@@ -45,6 +47,18 @@ class UniversalTopic():
                 return text
         else:
             return ""
+
+
+    def carry_articles(self, list_of_uuids):
+        for uuid in list_of_uuids:
+            file_path_dest = self.path_folder / "articles" / f"{uuid}.json"
+            file_path_orig = find_scraped_article_filepath(uuid)
+
+            if file_path_orig is not None:
+                try:
+                    shutil.copy(file_path_orig, file_path_dest)
+                except:
+                    print("Failed to copy:", uuid)
 
 
     def check_if_topic_already_answered(self, uuid: str):

@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 import traceback
 
-from loom.utils.print_link import print_link
+from loom.utils.files import print_link
 import os
 import numpy as np
 import glob

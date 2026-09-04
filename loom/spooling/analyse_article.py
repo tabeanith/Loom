@@ -32,7 +32,7 @@ from loom.data.keys import Keys
 from loom.data.curves.get import read_curves_from_onedrive
 from loom.data.curves.get import extend_snapshot_days_to_today
 
-from loom.spooling.source.universal_scraper import find_scraped_article_content
+from loom.utils.files import find_scraped_article_content
 from loom.spooling.llm.ask_and_answer import ask_and_answer_for_uuid
 
 tz = "Europe/Berlin"
@@ -43,7 +43,7 @@ tz = "Europe/Berlin"
 if __name__ == "__main__":
     console = Console()
 
-    link = "https://www.reuters.com/business/take-five/global-markets-themes-2026-09-04/"
+    link = "https://www.reuters.com/business/feds-waller-open-leaving-rates-unchanged-september-meeting-if-inflation-cools-2026-09-03/"
     _uuid = uuid.uuid5(uuid.NAMESPACE_DNS, link)
 
     topic = T10_US_Rates()

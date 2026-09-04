@@ -11,7 +11,7 @@ from loom.spooling.topics.universal_topic import UniversalTopic
 
 from loom.spooling.llm.claude import ask_claude
 
-from loom.utils.text import count_words, count_keywords
+from loom.utils.analyse_strings import count_words, count_keywords
 
 tz = "Europe/Berlin"
 
@@ -31,10 +31,24 @@ def get_scrap(uuid: str):
     return {}
 
 
-def ask_and_save_answer(scraper: UniversalScraper, topic: UniversalTopic, ts_start_reviewing: pd.Timestamp, use_ai: bool=False):
+def TBD_ask_and_save_answer(scraper: UniversalScraper, topic: UniversalTopic, ts_start_reviewing: pd.Timestamp, use_ai: bool=False):
     folder = scraper.get_folder()
 
     df = load_references(folder)
+    df = df.sort_values("crawled_at", ascending=False)
+
+    _df = df[df["timestamp"] > ts_start_reviewing]
+
+    for ix, row in _df.iterrows():
+        uuid = row["uuid"]
+        answer = ask_and_answer_for_uuid(topic, uuid, use_ai=use_ai)
+        topic.save_llm_answer(uuid, answer)
+
+
+def ask_and_save_answer(topic: UniversalTopic, ts_start_reviewing: pd.Timestamp, use_ai: bool=False):
+    path_folder = topic.path_folder
+
+    df = load_references(path_folder)
     df = df.sort_values("crawled_at", ascending=False)
 
     _df = df[df["timestamp"] > ts_start_reviewing]

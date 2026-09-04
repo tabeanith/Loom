@@ -69,7 +69,26 @@ class Reuters(UniversalScraper):
         "https://www.reuters.com/authors/david-lawder/",
     ]
 
-    def run_scraper(self):
+    def run_scraper_to_topic_pipeline(self, search_keywords, topic):
+        pages = []
+
+        for keyword in search_keywords:
+            page1 = f"https://www.reuters.com/site-search/?query={keyword}"
+            page2 = f"https://www.reuters.com/site-search/?query={keyword}&offset=20"
+            page3 = f"https://www.reuters.com/site-search/?query={keyword}&offset=40"
+            pages.append(page1)
+            pages.append(page2)
+            pages.append(page3)
+
+        all_linked_uuids = self._run_scraper(pages)
+
+        # Copy the scraped articles into the topic folder:
+        topic.carry_articles(all_linked_uuids)
+
+
+    def _run_scraper(self, pages_linking_to_articles):
+        all_linked_uuids = []
+
         try:
             with sync_playwright() as p:
                 launch_args = [
@@ -84,7 +103,7 @@ class Reuters(UniversalScraper):
                     args=launch_args,
                 )
 
-                for sub_page in self.sub_pages:
+                for sub_page in pages_linking_to_articles:
                     page1 = browser.new_page()
                     page1.goto(sub_page)
                     sleep(5)
@@ -106,6 +125,8 @@ class Reuters(UniversalScraper):
                             link = "https://www.reuters.com" + link
 
                         _uuid = uuid.uuid5(uuid.NAMESPACE_DNS, link)
+                        all_linked_uuids.append(_uuid)
+
                         if self.check_if_scrap_already_exists(_uuid):
                             print("Already scraped:", _uuid, link)
                             continue
@@ -180,6 +201,8 @@ class Reuters(UniversalScraper):
 
         except Exception as e:
             print(traceback.format_exc())
+
+        return all_linked_uuids
 
 
 if __name__ == "__main__":
