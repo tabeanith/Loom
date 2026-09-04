@@ -48,30 +48,39 @@ class TheGuardian(UniversalScraper):
 
     url_main = "https://www.theguardian.com"
 
-    sub_pages = [
+    sub_pages_weather = [
+        "https://www.theguardian.com/environment/series/weather-tracker",
+        "https://www.theguardian.com/environment/series/weather-tracker?page=2",
+        "https://www.theguardian.com/environment/climate-crisis",
+        "https://www.theguardian.com/environment",
+    ]
+
+    sub_pages_fuels = [
         "https://www.theguardian.com/world/strait-of-hormuz",
         "https://www.theguardian.com/world/strait-of-hormuz?page=2",
         "https://www.theguardian.com/world/us-israel-war-on-iran",
         "https://www.theguardian.com/world/us-israel-war-on-iran?page=2",
-        "https://www.theguardian.com/environment/series/weather-tracker",
-        "https://www.theguardian.com/environment/series/weather-tracker",
-        "https://www.theguardian.com/environment/series/weather-tracker?page=2",
         "https://www.theguardian.com/world/germany",
         "https://www.theguardian.com/world",
         "https://www.theguardian.com/world/europe-news",
         "https://www.theguardian.com/us-news",
         "https://www.theguardian.com/global-development",
-        "https://www.theguardian.com/environment/climate-crisis",
-        "https://www.theguardian.com/environment",
     ]
 
 
-    def run_scraper(self):
+    def run_scraper_to_topic_pipeline(self, subpages, topic):
+        all_linked_uuids = self.run_scraper(subpages)
+        topic.carry_articles(all_linked_uuids)
+
+
+    def run_scraper(self, pages_linking_to_articles):
+        all_linked_uuids = []
+
         try:
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
 
-                for sub_page in self.sub_pages:
+                for sub_page in pages_linking_to_articles:
                     page1 = browser.new_page()
                     page1.goto(sub_page)
 
@@ -90,6 +99,8 @@ class TheGuardian(UniversalScraper):
                             link = "https://www.theguardian.com" + link
 
                         _uuid = uuid.uuid5(uuid.NAMESPACE_DNS, link)
+                        all_linked_uuids.append(_uuid)
+
                         if self.check_if_scrap_already_exists(_uuid):
                             print("Already scraped:", link)
                             continue
@@ -143,6 +154,8 @@ class TheGuardian(UniversalScraper):
 
         except Exception as e:
             print(traceback.format_exc())
+
+        return all_linked_uuids
 
 
 if __name__ == "__main__":

@@ -69,6 +69,7 @@ class Reuters(UniversalScraper):
         "https://www.reuters.com/authors/david-lawder/",
     ]
 
+
     def run_scraper_to_topic_pipeline(self, search_keywords, topic):
         pages = []
 

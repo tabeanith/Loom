@@ -45,18 +45,15 @@ if __name__ == "__main__":
         # EU weather
         SevereWeatherEurope().run_scraper_to_topic_pipeline(topic2)
         Reuters().run_scraper_to_topic_pipeline(["europe weather", "europe climate change"], topic2)
+        TheGuardian().run_scraper_to_topic_pipeline(TheGuardian().sub_pages_weather, topic2)
 
         # Gas market
         Reuters().run_scraper_to_topic_pipeline(["natural gas", "germany natural gas", "europe lng", "germany lng", "germany power prices"], topic3)
+        TheGuardian().run_scraper_to_topic_pipeline(TheGuardian().sub_pages_fuels, topic3)
 
-
-        if False:
-            TheGuardian().run_scraper()
-            TheGuardian().generate_references()
-
-        TheGuardian().sanity_check_references()
-        Reuters().sanity_check_references()
-        SevereWeatherEurope().sanity_check_references()
+        #TheGuardian().sanity_check_references()
+        #Reuters().sanity_check_references()
+        #SevereWeatherEurope().sanity_check_references()
 
 
     # -------------------------  Check relevant topics and reviewing -------------------------------------------------
