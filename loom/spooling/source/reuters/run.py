@@ -75,10 +75,8 @@ class Reuters(UniversalScraper):
         for keyword in search_keywords:
             page1 = f"https://www.reuters.com/site-search/?query={keyword}"
             page2 = f"https://www.reuters.com/site-search/?query={keyword}&offset=20"
-            page3 = f"https://www.reuters.com/site-search/?query={keyword}&offset=40"
             pages.append(page1)
             pages.append(page2)
-            pages.append(page3)
 
         all_linked_uuids = self.run_scraper(pages)
 

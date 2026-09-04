@@ -267,3 +267,16 @@ class T02_Weather(UniversalTopic):
         df_full = df_results.merge(df_results_meta, left_index=True, right_index=True)
 
         return df_full
+
+
+if __name__ == "__main__":
+
+    # TODO: This is just for fixing something
+    if False:
+        topic = T02_Weather()
+        data = topic.get_all_topic_answers()
+        uuids = data.keys()
+
+        topic.carry_articles(uuids)
+
+

@@ -18,6 +18,7 @@ from loom.spooling.llm.ask_and_answer import TBD_ask_and_save_answer
 from loom.spooling.llm.ask_and_answer import ask_and_answer_for_uuid
 
 
+
 class T03_Gas_Fuel(UniversalTopic):
 
     path_folder = Path(__file__).parent.resolve()
@@ -285,3 +286,16 @@ class T03_Gas_Fuel(UniversalTopic):
         Relevance: x (x [YES, NO, IMPLICIT])
         Severity score: Y (Y on a scale of 0: very neutral situation to 100: extremely high demand)
     """
+
+
+if __name__ == "__main__":
+
+    # TODO: This is just for fixing something
+    if False:
+        topic = T03_Gas_Fuel()
+        data = topic.get_all_topic_answers()
+        uuids = data.keys()
+
+        topic.carry_articles(uuids)
+
+

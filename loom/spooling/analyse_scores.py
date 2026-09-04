@@ -212,13 +212,6 @@ def calculate_sentiment_v1(df_score, df_out_idx, lookback_days):
 if __name__ == "__main__":
     curves = {}
 
-    df1 = load_references("severe_weather_europe")
-    df2 = load_references("theguardian")
-    df3 = load_references("reuters")
-
-    df = pd.concat([df1, df2, df3])
-    df = df.sort_values("timestamp", ascending=False)
-
     topic_eu = T01_EU_Power()
     topic_weather = T02_Weather()
     topic_gas_fuel = T03_Gas_Fuel()
@@ -228,8 +221,8 @@ if __name__ == "__main__":
     list_of_colors = ["blue", "orange"]
 
     #df_score0 = topic_eu.calculate_scores(df)
-    df_score1 = topic_weather.calculate_scores(df)
-    df_score2 = topic_gas_fuel.calculate_scores(df)
+    df_score2 = topic_gas_fuel.calculate_scores(topic_gas_fuel.generate_references())
+    df_score1 = topic_weather.calculate_scores(topic_weather.generate_references())
 
     #for col in df_score1.columns:
     #    if isinstance(col, pd.Timestamp):
