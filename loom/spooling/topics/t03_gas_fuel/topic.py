@@ -14,7 +14,7 @@ from loom.spooling.topics.extraction import extract_answer_int
 from loom.spooling.topics.extraction import extract_answer_int_four_season
 from loom.spooling.source.universal_scraper import find_scraped_article_content
 
-from loom.spooling.llm.ask_and_answer import ask_and_answer
+from loom.spooling.llm.ask_and_answer import ask_and_save_answer
 from loom.spooling.llm.ask_and_answer import ask_and_answer_for_uuid
 
 
@@ -259,7 +259,7 @@ class T03_Gas_Fuel(UniversalTopic):
                 #print(traceback.format_exc())
                 print("Parsing error with uuid:", uuid, url)
                 if False:
-                    ask_and_answer_for_uuid(self, uuid, use_ai=True, overwrite_existing_answer=True)
+                    ask_and_answer_for_uuid(self, uuid, use_ai=True, save_answer=True)
 
 
         df_results = pd.concat(results, axis=1).T

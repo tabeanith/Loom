@@ -31,7 +31,7 @@ def get_scrap(uuid: str):
     return {}
 
 
-def ask_and_answer(scraper: UniversalScraper, topic: UniversalTopic, ts_start_reviewing: pd.Timestamp, use_ai: bool=False):
+def ask_and_save_answer(scraper: UniversalScraper, topic: UniversalTopic, ts_start_reviewing: pd.Timestamp, use_ai: bool=False):
     folder = scraper.get_folder()
 
     df = load_references(folder)
@@ -41,10 +41,11 @@ def ask_and_answer(scraper: UniversalScraper, topic: UniversalTopic, ts_start_re
 
     for ix, row in _df.iterrows():
         uuid = row["uuid"]
-        ask_and_answer_for_uuid(topic, uuid, use_ai=use_ai)
+        answer = ask_and_answer_for_uuid(topic, uuid, use_ai=use_ai)
+        topic.save_llm_answer(uuid, answer)
 
 
-def ask_and_answer_for_uuid(topic: UniversalTopic, uuid: str, use_ai: bool=False, overwrite_existing_answer: bool=False):
+def ask_and_answer_for_uuid(topic: UniversalTopic, uuid: str, use_ai: bool=False, ignore_existing_answer: bool=False):
     topic_keywords = topic.get_content_keywords()
     scrap = get_scrap(uuid)
 
@@ -65,15 +66,19 @@ def ask_and_answer_for_uuid(topic: UniversalTopic, uuid: str, use_ai: bool=False
     check2 = ratio > 0.05  # Weed out some less relevant articles, dont evaluate every noise
 
     #print(uuid, topic.get_topic(), ratio, is_already_answered, url)
+    inquire = False
 
     if check1 and check2:
-        if is_already_answered and (not overwrite_existing_answer):
-            pass
-            #print(uuid, topic.get_name(), ratio, is_already_answered, url)
-        else:
-            print(f"{uuid} | {topic.get_name()} | {article_timestamp} | {ratio} | {article_title} | {url}")
+        if use_ai:
+            if ignore_existing_answer:
+                inquire = True
+            elif is_already_answered:
+                inquire = False
+            else:
+                inquire = True
 
-            if use_ai:
+            if inquire:
+                print(f"{uuid} | {topic.get_name()} | {article_timestamp} | {ratio} | {article_title} | {url}")
 
                 llm_system = topic.get_llm_system()
                 llm_question = topic.get_llm_question(article_title, article_content)
@@ -82,4 +87,7 @@ def ask_and_answer_for_uuid(topic: UniversalTopic, uuid: str, use_ai: bool=False
 
                 topic.save_llm_answer(uuid, topic_answer)
 
+                return topic_answer
+
+    return None
 

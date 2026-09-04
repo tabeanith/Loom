@@ -32,6 +32,7 @@ from loom.data.curves.get import read_curves_from_onedrive
 from loom.data.curves.get import extend_snapshot_days_to_today
 
 from loom.spooling.source.universal_scraper import find_scraped_article_content
+from loom.spooling.llm.ask_and_answer import ask_and_answer_for_uuid
 
 tz = "Europe/Berlin"
 
@@ -41,19 +42,23 @@ tz = "Europe/Berlin"
 if __name__ == "__main__":
     console = Console()
 
-    link = ""
+    link = "https://www.reuters.com/business/feds-waller-open-leaving-rates-unchanged-september-meeting-if-inflation-cools-2026-09-03/"
     _uuid = uuid.uuid5(uuid.NAMESPACE_DNS, link)
 
+    topic = T11_US_Stocks()
+
     txt = find_scraped_article_content(_uuid)
-
-    txtai = T11_US_Stocks.load_llm_answer(_uuid)
-
-
-
-
     md_txt = Markdown(txt)
-    md_txtai = Markdown(txtai)
-
     console.print(md_txt)
+
+
+    txtai = topic.load_llm_answer(_uuid)
+    md_txtai = Markdown(txtai)
     console.print(md_txtai)
+
+
+
+    txtai_NEW = ask_and_answer_for_uuid(topic, _uuid, use_ai=True, ignore_existing_answer=True)
+    md_txtai_NEW = Markdown(txtai_NEW)
+    console.print(md_txtai_NEW)
 

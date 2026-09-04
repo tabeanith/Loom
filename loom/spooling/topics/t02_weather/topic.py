@@ -258,7 +258,7 @@ class T02_Weather(UniversalTopic):
                 #print(traceback.format_exc())
                 print("Parsing error with uuid:", uuid, url)
                 if False:
-                    ask_and_answer_for_uuid(self, uuid, use_ai=True, overwrite_existing_answer=True)
+                    ask_and_answer_for_uuid(self, uuid, use_ai=True, save_answer=True)
 
         df_results = pd.concat(results, axis=1).T
         df_results_meta = pd.DataFrame(results_meta)

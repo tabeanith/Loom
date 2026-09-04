@@ -23,6 +23,8 @@ class UniversalTopic():
         raise NotImplementedError()
 
     def save_llm_answer(self, uuid: str, topic_answer: str):
+        if topic_answer is None: return
+
         file_path = self.path_folder / "answers" / f"{uuid}.json"
 
         data = {
