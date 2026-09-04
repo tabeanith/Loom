@@ -111,31 +111,23 @@ class T10_US_Rates(UniversalTopic):
                     [Write a concise content summary]
 
                 Q01. Is the content relevant to US economy, US yields, US interest rates and US market pricing?
-                Relevance: x (x [YES, NO, IMPLICIT])
+                Relevance: x (x [YES, NO])
                 
-                Q02. Is the content about increasing US interest rates? On the shorter term (next 1-2 years)? On the longer term (10 years)?
+                Q02. Is the content about increasing US interest rates?
+                Relevance: x (x on a scale of 0 [NO] to 100 [YES])
                 Increasing rates magnitude: y (y [percentage value])
-                Increasing rates shortterm: x (x [YES, NO])
-                Increasing rates longterm: x (x [YES, NO])
                 
-                Q03. Is the US rate increase already expected/confirmed or very new/uncertain information?
-                Expectancy score: y (y on a scale of 0 [already known and expected] to 100 [very unexpected/uncertain])
+                Q03. Is the content about holding stable US interest rates?
+                Relevance: x (x on a scale of 0 [NO] to 100 [YES])
 
-                Q04. Is the content about decreasing US interest rates? On the shorter term (next 1-2 years)? On the longer term (10 years)?
+                Q04. Is the content about decreasing US interest rates?
                 Decreasing rates magnitude: y (y [percentage value])
-                Decreasing rates shortterm: x (x [YES, NO])
-                Decreasing rates longterm: x (x [YES, NO])
                 
-                Q05. Is the US rate decrease already expected/confirmed or very new/uncertain information?
-                Expectancy score: y (y on a scale of 0 [already known and expected] to 100 [very unexpected/uncertain])
+                Q05. Focus on the very latest information: Is it striking a different sentiment/tone compared to previous discussions on US interest rates?
+                Difference: x (x on a scale of -100 [More dovish than before] to 100 [More hawkish than before])
                 
-                Q06. Is the content explicitly about bullish impact on the US stock markets?
-                Explicit: x (x [YES, NO])
-                Impact score: y (y on a scale of 0 [no impact] to 100 [very bullish])
-                
-                Q07. Is the content explicitly about bearish impact on the US stock markets?
-                Explicit: x (x [YES, NO])
-                Impact score: y (y on a scale of 0 [no impact] to 100 [very bearish])
+                Q06. Focus on the very latest information: How does it compare to previous information on US interest rates?
+                Difference: x (x on a scale of -100 [More dovish than before] to 100 [More hawkish than before])
                 """
 
         return message

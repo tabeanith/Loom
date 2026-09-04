@@ -84,9 +84,6 @@ def ask_and_answer_for_uuid(topic: UniversalTopic, uuid: str, use_ai: bool=False
                 llm_question = topic.get_llm_question(article_title, article_content)
 
                 topic_answer = ask_claude(llm_system, llm_question, use_web_fetch=True)
-
-                topic.save_llm_answer(uuid, topic_answer)
-
                 return topic_answer
 
     return None

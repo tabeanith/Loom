@@ -24,6 +24,7 @@ from loom.spooling.topics.t01_eu_power.topic import T01_EU_Power
 from loom.spooling.topics.t02_weather.topic import T02_Weather
 from loom.spooling.topics.t03_gas_fuel.topic import T03_Gas_Fuel
 from loom.spooling.topics.t11_us_stocks.topic import T11_US_Stocks
+from loom.spooling.topics.t10_us_rates.topic import T10_US_Rates
 
 from loom.spooling.source.reuters.run import Reuters
 
@@ -42,10 +43,10 @@ tz = "Europe/Berlin"
 if __name__ == "__main__":
     console = Console()
 
-    link = "https://www.reuters.com/business/feds-waller-open-leaving-rates-unchanged-september-meeting-if-inflation-cools-2026-09-03/"
+    link = "https://www.reuters.com/business/take-five/global-markets-themes-2026-09-04/"
     _uuid = uuid.uuid5(uuid.NAMESPACE_DNS, link)
 
-    topic = T11_US_Stocks()
+    topic = T10_US_Rates()
 
     txt = find_scraped_article_content(_uuid)
     md_txt = Markdown(txt)
