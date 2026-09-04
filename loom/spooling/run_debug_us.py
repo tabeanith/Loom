@@ -106,8 +106,8 @@ if __name__ == "__main__":
 
 
 
-        buys1 = sentimentH.diff().clip(lower=0)
-        sells1 = sentimentH.diff().clip(upper=0) * -1.
+        buys1 = sentimentH.diff().clip(lower=0) / 10.
+        sells1 = sentimentH.diff().clip(upper=0) * -1. / 10.
         mtm, open_volume = calculate_mtm_from_buy_sell(buys1, sells1, prices)
         #_open_volume = (open_volume / 1.).astype(int) * 5.
         open_volume_bounded = get_bounded_open_volume(open_volume, _maximum, _minimum)
@@ -119,9 +119,7 @@ if __name__ == "__main__":
 
 
         result_mtm = mtm1  + mtm2
-        result_mtm = mtm2
         result_open_volume = open_volume1  + open_volume2
-        result_open_volume =  open_volume2
         print("mtm", result_mtm.iloc[-1])
         print("pips trading", result_mtm.iloc[-1] / result_open_volume[result_open_volume != 0].abs().mean())
         print("pips market", prices.iloc[-1] - prices.iloc[0])
