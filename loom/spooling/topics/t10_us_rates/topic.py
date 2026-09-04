@@ -175,7 +175,7 @@ class T10_US_Rates(UniversalTopic):
                 dec_rel = extract_answer_int(parts[4], "relevance")
                 dec_prb = extract_answer_int(parts[4], "probability")
 
-                sentiment = extract_answer_int(parts[5], "sentiment")
+                sentiment = extract_answer_int(parts[5], "sentiment") * -1.
 
 
                 inc_score = inc_rel * inc_prb / 100. * -1.
