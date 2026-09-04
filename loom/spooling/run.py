@@ -70,11 +70,11 @@ if __name__ == "__main__":
     print("\n Check for new aricles to be processed by AI \n")
 
     for topic in [topic10]:
-        ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True, ignore_existing_answer=True)
+        ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True)
 
     # Go through all topics
     for topic in [topic2, topic3]:
-        ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True, ignore_existing_answer=False)
+        ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True)
 
 
 

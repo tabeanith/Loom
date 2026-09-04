@@ -42,7 +42,6 @@ from matplotlib import pyplot as plt
 if __name__ == "__main__":
 
     topic = T10_US_Rates()
-    scraper = Reuters()
 
     # For debugging only
     if True:
@@ -62,12 +61,18 @@ if __name__ == "__main__":
 
         #  ----------------------------------------------  Market sentiment  ---------------------------------------
 
-        uuid = "6070ec3b-7db9-5f46-bb7e-70af35e55eec"
+        uuid = "4d48a78c-0d3b-5598-b452-d15591ac80d2"
         #ask_and_answer_for_uuid(topic, uuid=uuid, use_ai=True)
         txt = topic.load_llm_answer(uuid)
         print(txt)
-        df_ref = load_references(scraper.get_folder())
+        df_ref = topic.generate_references()
         df_result = topic.calculate_scores(df_ref)
+        df_result = df_result.dropna(axis=0)
+
+        df_result["score"].rolling(24).mean().plot()
+        df_result["sentiment"].rolling(24).mean().plot()
+
+
 
         sentiment = calculate_sentiment_v1(df_result, prices, 7)
         sentiment_bull = calculate_sentiment_v1(df_result[df_result["score"] > 0], prices,  7)

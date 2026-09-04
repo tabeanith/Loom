@@ -100,6 +100,7 @@ class UniversalTopic():
                     all_data.append(data)
 
         df = pd.DataFrame(all_data)
-        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(tz)
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce").dt.tz_convert(tz)
+        df = df.sort_values("timestamp", ascending=False)
 
         return df

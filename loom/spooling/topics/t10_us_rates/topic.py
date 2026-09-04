@@ -178,7 +178,7 @@ class T10_US_Rates(UniversalTopic):
                 sentiment = extract_answer_int(parts[5], "sentiment") * -1.
 
 
-                inc_score = inc_rel * inc_prb / 100. * -1.
+                inc_score = inc_rel * inc_prb / 100.
                 hdl_score = hld_rel * hld_prb / 100.
                 dec_score = dec_rel * dec_prb / 100.
 
@@ -191,7 +191,7 @@ class T10_US_Rates(UniversalTopic):
                 dec_score = 0 if np.isnan(dec_score) else dec_score
                 hdl_score = 0 if np.isnan(hdl_score) else hdl_score
 
-                score = inc_score + dec_score + hdl_score
+                score = inc_score * -1. + dec_score + hdl_score
 
                 # If article is not relevant to US, cancel the score
                 if np.isnan(relevance_to_us) or (relevance_to_us < 1):
