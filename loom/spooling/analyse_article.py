@@ -43,10 +43,10 @@ tz = "Europe/Berlin"
 if __name__ == "__main__":
     console = Console()
 
-    link = "https://www.reuters.com/business/feds-waller-open-leaving-rates-unchanged-september-meeting-if-inflation-cools-2026-09-03/"
+    link = "https://www.reuters.com/business/media-telecom/european-shares-edge-higher-bond-yields-ease-2026-09-03/"
     _uuid = uuid.uuid5(uuid.NAMESPACE_DNS, link)
 
-    _uuid = "9364f122-10c7-57b7-9b22-1577a1b1fc28"
+    _uuid = "bb788f7a-df96-55a1-bacf-94bc323b9fee"
 
     topic = T10_US_Rates()
 

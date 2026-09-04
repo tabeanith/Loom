@@ -110,7 +110,7 @@ class T10_US_Rates(UniversalTopic):
                 Synopsis:
                     [Write a concise content summary]
 
-                Q01. Is the content relevant to US economy, US yields, US interest rates and US market pricing?
+                Q01. Is the content's main message on the US economy, US yields, US interest rates?
                 Relevance: x (x [YES, NO])
                 
                 Q02. Is the content about increasing US interest rates?
@@ -163,7 +163,6 @@ class T10_US_Rates(UniversalTopic):
 
                 # TODO: intro
                 intro = parts[0]
-
                 relevance_to_us = extract_answer_yes_no(parts[1], "relevance")
 
                 inc_rel = extract_answer_int(parts[2], "relevance")
