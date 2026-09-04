@@ -73,6 +73,11 @@ if __name__ == "__main__":
         scoreH = df_result.groupby(by="hours")["score"].mean()
         sentimentH = df_result.groupby(by="hours")["sentiment"].mean()
 
+        scoreH = scoreH.rolling(12).mean()
+        sentimentH = sentimentH.rolling(12).mean()
+
+        scoreH = scoreH.reindex(prices.index).ffill()
+        sentimentH = sentimentH.reindex(prices.index).ffill()
 
         #  ----------------------------------------------  Strats  -------------------------------------------------
 
@@ -92,8 +97,8 @@ if __name__ == "__main__":
 
 
 
-        buys1 = sentimentH.diff().clip(lower=0) / 10.
-        sells1 = sentimentH.diff().clip(upper=0) * -1. / 10.
+        buys1 = sentimentH.diff().clip(lower=0)
+        sells1 = sentimentH.diff().clip(upper=0) * -1.
         mtm, open_volume = calculate_mtm_from_buy_sell(buys1, sells1, prices)
         #_open_volume = (open_volume / 1.).astype(int) * 5.
         open_volume_bounded = get_bounded_open_volume(open_volume, _maximum, _minimum)
