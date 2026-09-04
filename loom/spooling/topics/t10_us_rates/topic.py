@@ -115,18 +115,17 @@ class T10_US_Rates(UniversalTopic):
                 
                 Q02. Is the content about increasing US interest rates?
                 Relevance: x (x on a scale of 0 [NO] to 100 [YES])
-                Increasing rates magnitude: y (y [percentage value])
+                Probability of increase: y (y [percentage value])
                 
                 Q03. Is the content about holding stable US interest rates?
                 Relevance: x (x on a scale of 0 [NO] to 100 [YES])
+                Probability of holding: y (y [percentage value])
 
                 Q04. Is the content about decreasing US interest rates?
-                Decreasing rates magnitude: y (y [percentage value])
-                
-                Q05. Focus on the very latest information: Is it striking a different sentiment/tone compared to previous discussions on US interest rates?
-                Difference: x (x on a scale of -100 [More dovish than before] to 100 [More hawkish than before])
-                
-                Q06. Focus on the very latest information: How does it compare to previous information on US interest rates?
+                Relevance: x (x on a scale of 0 [NO] to 100 [YES])
+                Probability of decrease: y (y [percentage value])
+
+                Q05. Focus on the very latest information: What is the sentiment/tone including the very latest information on US interest rates?
                 Difference: x (x on a scale of -100 [More dovish than before] to 100 [More hawkish than before])
                 """
 
