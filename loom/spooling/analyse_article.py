@@ -46,6 +46,8 @@ if __name__ == "__main__":
     link = "https://www.reuters.com/business/feds-waller-open-leaving-rates-unchanged-september-meeting-if-inflation-cools-2026-09-03/"
     _uuid = uuid.uuid5(uuid.NAMESPACE_DNS, link)
 
+    _uuid = "9364f122-10c7-57b7-9b22-1577a1b1fc28"
+
     topic = T10_US_Rates()
 
     txt = find_scraped_article_content(_uuid)
