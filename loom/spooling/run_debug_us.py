@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
         df_result["score"].rolling(24).mean().plot()
         df_result["sentiment"].rolling(24).mean().plot()
-
+        plt.show()
 
 
         sentiment = calculate_sentiment_v1(df_result, prices, 7)
