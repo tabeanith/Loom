@@ -71,7 +71,7 @@ if __name__ == "__main__":
         TBD_ask_and_save_answer(SevereWeatherEurope(), topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=use_ai)
 
     # US Interest Rates
-    ask_and_save_answer(topic10, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True)
+    ask_and_save_answer(topic10, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True, ignore_existing_answer=True)
 
 
 

@@ -45,7 +45,7 @@ def TBD_ask_and_save_answer(scraper: UniversalScraper, topic: UniversalTopic, ts
         topic.save_llm_answer(uuid, answer)
 
 
-def ask_and_save_answer(topic: UniversalTopic, ts_start_reviewing: pd.Timestamp, use_ai: bool=False):
+def ask_and_save_answer(topic: UniversalTopic, ts_start_reviewing: pd.Timestamp, use_ai: bool=False, ignore_existing_answer: bool=False):
     path_folder = topic.path_folder
 
     df = load_references(path_folder)
@@ -55,7 +55,7 @@ def ask_and_save_answer(topic: UniversalTopic, ts_start_reviewing: pd.Timestamp,
 
     for ix, row in _df.iterrows():
         uuid = row["uuid"]
-        answer = ask_and_answer_for_uuid(topic, uuid, use_ai=use_ai)
+        answer = ask_and_answer_for_uuid(topic, uuid, use_ai=use_ai, ignore_existing_answer=ignore_existing_answer)
         topic.save_llm_answer(uuid, answer)
 
 
