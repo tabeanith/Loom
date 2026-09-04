@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     # ------------------------------------------  Work mode  ---------------------------------------------------------
     scrape_for_new_articles = True
-    scrape_for_new_articles = True
+    scrape_for_new_articles = False
 
     use_ai = True
     #use_ai = False

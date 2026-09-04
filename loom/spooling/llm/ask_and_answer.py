@@ -46,9 +46,7 @@ def TBD_ask_and_save_answer(scraper: UniversalScraper, topic: UniversalTopic, ts
 
 
 def ask_and_save_answer(topic: UniversalTopic, ts_start_reviewing: pd.Timestamp, use_ai: bool=False, ignore_existing_answer: bool=False):
-    path_folder = topic.path_folder
-
-    df = load_references(path_folder)
+    df = topic.generate_references()
     df = df.sort_values("crawled_at", ascending=False)
 
     _df = df[df["timestamp"] > ts_start_reviewing]

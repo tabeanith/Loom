@@ -3,6 +3,9 @@ import json
 import os
 import shutil
 from loom.utils.files import find_scraped_article_filepath
+import pandas as pd
+
+tz = "Europe/Berlin"
 
 
 class UniversalTopic():
@@ -82,3 +85,21 @@ class UniversalTopic():
         return all_topic_answers
 
 
+    def generate_references(self):
+        path_existing_scrapes = self.path_folder / "articles"
+        all_data = []
+
+        for dirpath, dirnames, filenames in os.walk(path_existing_scrapes):
+
+            for filename in filenames:
+                found_file_path = Path(dirpath) / filename
+
+                with open(found_file_path, "r") as f:
+                    data = json.load(f)
+                    data.pop("text")
+                    all_data.append(data)
+
+        df = pd.DataFrame(all_data)
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(tz)
+
+        return df

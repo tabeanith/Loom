@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def find_scraped_article_filepath(uuid: str):
-    path = Path(__file__).parent.resolve()
+    path = Path(__file__).parent.parent.resolve() / "spooling" / "source"
     subdirectories = [item for item in os.listdir(path) if os.path.isdir(path)]
 
     for subdir in subdirectories:
