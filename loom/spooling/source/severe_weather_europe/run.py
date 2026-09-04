@@ -22,7 +22,16 @@ class SevereWeatherEurope(UniversalScraper):
 
     url_main = "https://www.severe-weather.eu/"
 
+    def run_scraper_to_topic_pipeline(self, topic):
+
+        all_linked_uuids = self.run_scraper()
+
+        # Copy the scraped articles into the topic folder:
+        topic.carry_articles(all_linked_uuids)
+
     def run_scraper(self):
+        all_linked_uuids = []
+
         try:
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
@@ -38,6 +47,7 @@ class SevereWeatherEurope(UniversalScraper):
 
                     if title is None: continue
                     _uuid = uuid.uuid5(uuid.NAMESPACE_DNS, link)
+                    all_linked_uuids.append(_uuid)
 
                     if self.check_if_scrap_already_exists(_uuid):
                         print("Already scraped:", link)
@@ -83,6 +93,8 @@ class SevereWeatherEurope(UniversalScraper):
 
         except Exception as e:
             print(traceback.format_exc())
+
+        return all_linked_uuids
 
 
 if __name__ == "__main__":

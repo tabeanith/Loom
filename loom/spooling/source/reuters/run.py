@@ -80,13 +80,13 @@ class Reuters(UniversalScraper):
             pages.append(page2)
             pages.append(page3)
 
-        all_linked_uuids = self._run_scraper(pages)
+        all_linked_uuids = self.run_scraper(pages)
 
         # Copy the scraped articles into the topic folder:
         topic.carry_articles(all_linked_uuids)
 
 
-    def _run_scraper(self, pages_linking_to_articles):
+    def run_scraper(self, pages_linking_to_articles):
         all_linked_uuids = []
 
         try:

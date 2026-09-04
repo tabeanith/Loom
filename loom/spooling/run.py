@@ -23,8 +23,8 @@ tz = "Europe/Berlin"
 if __name__ == "__main__":
 
     # ------------------------------------------  Work mode  ---------------------------------------------------------
-    scrape_for_new_articles = True
     scrape_for_new_articles = False
+    scrape_for_new_articles = True
 
     use_ai = True
     #use_ai = False
@@ -42,10 +42,15 @@ if __name__ == "__main__":
         # US Interest Rates
         Reuters().run_scraper_to_topic_pipeline(["fed", "hawkish", "dovish"], topic10)
 
+        # EU weather
+        SevereWeatherEurope().run_scraper_to_topic_pipeline(topic2)
+        Reuters().run_scraper_to_topic_pipeline(["europe weather", "europe climate change"], topic2)
 
-        if True:
-            SevereWeatherEurope().run_scraper()
-            SevereWeatherEurope().generate_references()
+        # Gas market
+        Reuters().run_scraper_to_topic_pipeline(["natural gas", "germany natural gas", "europe lng", "germany lng", "germany power prices"], topic3)
+
+
+
         if True:
             Reuters().run_scraper()
             Reuters().generate_references()
@@ -64,15 +69,12 @@ if __name__ == "__main__":
 
     print("\n Check for new aricles to be processed by AI \n")
 
-    # EU Power
+    # Go through all topics
     for topic in [topic2, topic3]:
-        TBD_ask_and_save_answer(TheGuardian(), topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=use_ai)
-        TBD_ask_and_save_answer(Reuters(), topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=use_ai)
-        TBD_ask_and_save_answer(SevereWeatherEurope(), topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=use_ai)
+        ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True, ignore_existing_answer=False)
 
-    # US Interest Rates
-    ask_and_save_answer(topic10, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True, ignore_existing_answer=True)
-
+    for topic in [topic10]:
+        ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True, ignore_existing_answer=True)
 
 
 
