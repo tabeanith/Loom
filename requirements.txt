@@ -14,4 +14,6 @@ playwright
 anthropic
 python-dotenv
 numba
+rich
+
 
