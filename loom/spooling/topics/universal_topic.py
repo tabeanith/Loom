@@ -101,6 +101,6 @@ class UniversalTopic():
 
         df = pd.DataFrame(all_data)
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, format="mixed").dt.tz_convert(tz)
-        df = df.sort_values("timestamp", ascending=False)
+        df = df.sort_values("timestamp")
 
         return df

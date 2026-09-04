@@ -50,11 +50,7 @@ if __name__ == "__main__":
         Reuters().run_scraper_to_topic_pipeline(["natural gas", "germany natural gas", "europe lng", "germany lng", "germany power prices"], topic3)
 
 
-
-        if True:
-            Reuters().run_scraper()
-            Reuters().generate_references()
-        if True:
+        if False:
             TheGuardian().run_scraper()
             TheGuardian().generate_references()
 
@@ -65,7 +61,7 @@ if __name__ == "__main__":
 
     # -------------------------  Check relevant topics and reviewing -------------------------------------------------
 
-    days_back_in_time = 5
+    days_back_in_time = 10
 
     print("\n Check for new aricles to be processed by AI \n")
 
