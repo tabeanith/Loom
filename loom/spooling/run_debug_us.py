@@ -47,9 +47,9 @@ if __name__ == "__main__":
     if True:
 
         #  ----------------------------------------------  Market prices  ------------------------------------------
-        ts_go = pd.Timestamp(date(2026, 8, 1), tz=tz)
+        ts_go = pd.Timestamp(date(2026, 8, 20), tz=tz)
 
-        symbol = "MGC"
+        symbol = "NQ"
         #symbol = "MGC"
         tf = "5min"
         df = read_dataframe(symbol, tf)
@@ -73,8 +73,8 @@ if __name__ == "__main__":
         scoreH = df_result.groupby(by="hours")["score"].mean()
         sentimentH = df_result.groupby(by="hours")["sentiment"].mean()
 
-        #scoreH = scoreH.rolling(12).mean()
-        #sentimentH = sentimentH.rolling(12).mean()
+        scoreHmean = scoreH.rolling(10).mean()#.reindex(prices.index).ffill()
+        sentimentHmean = sentimentH.rolling(10).mean()#.reindex(prices.index).ffill()
 
         #  ----------------------------------------------  Strats  -------------------------------------------------
 
@@ -94,20 +94,20 @@ if __name__ == "__main__":
 
 
 
-        buys1 = sentimentH.diff().clip(lower=0)
-        sells1 = sentimentH.diff().clip(upper=0) * -1.
+        buys1 = (scoreH - scoreHmean).clip(lower=0)
+        sells1 = (scoreH - scoreHmean).clip(upper=0) * -1.
         mtm, open_volume = calculate_mtm_from_buy_sell(buys1, sells1, prices)
         #_open_volume = (open_volume / 1.).astype(int) * 5.
         open_volume_bounded = get_bounded_open_volume(open_volume, _maximum, _minimum)
-        mtm2, open_volume2 = calculate_mtm_from_open_position(open_volume_bounded, prices)
+        mtm2, open_volume2 = calculate_mtm_from_open_position(open_volume_bounded / 200. * 10., prices)
 
 
 
 
 
 
-        result_mtm = mtm2
-        result_open_volume = open_volume2
+        result_mtm =  mtm1 + mtm2
+        result_open_volume = open_volume1 + open_volume2
         print("mtm", result_mtm.iloc[-1])
         print("pips trading", result_mtm.iloc[-1] / result_open_volume[result_open_volume != 0].abs().mean())
         print("pips market", prices.iloc[-1] - prices.iloc[0])
@@ -121,7 +121,7 @@ if __name__ == "__main__":
         prices.plot(ax=ax1, label="open", color="black")
         ax2.scatter(x=scores.index, y=scores.values, label="scores", marker='o', linestyle='None')
         ax2.stem(scores.index, scores.values)
-        scoreH.plot(ax=ax2, label="scoreH", color="green")
+        scoreHmean.plot(ax=ax2, label="scoreHmean", color="blue")
         sentimentH.plot(ax=ax2, label="sentimentH", color="cyan")
        # (-sentiment_bear).plot(ax=ax2, label="sentiment_bear", color="red")
         #sentiment.plot(ax=ax2, label="sentiment", color="orange")
