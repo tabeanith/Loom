@@ -48,7 +48,7 @@ if __name__ == "__main__":
     if True:
 
         #  ----------------------------------------------  Market prices  ------------------------------------------
-        ts_go = pd.Timestamp(date(2026, 1, 20), tz=tz)
+        ts_go = pd.Timestamp(date(2026, 8, 20), tz=tz)
 
         symbol = "NQ"
         #symbol = "MGC"
