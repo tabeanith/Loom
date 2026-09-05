@@ -44,7 +44,7 @@ def get_bounded_open_volume(open_volume, maximum_pos, minimum_neg):
         maxval = _maximum.iloc[i]
         minval = _minimum.iloc[i]
         if new > maxval:
-            bounded_volume.iloc[i] = maxval
+            bounded_volume.iloc[i] = maxval #np.max([maxval, new])
         elif new < minval:
             bounded_volume.iloc[i] = minval
         else:

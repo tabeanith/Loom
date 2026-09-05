@@ -69,13 +69,13 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     # STRAT --- Buying on positive sentiment
     past = (prices_power > upper).astype(int).rolling(5).mean() > 0.75
     sellsingular = (prices_power < middle).astype(int).diff() > 0
-    sellX = (past & sellsingular).astype(int) * 10 * n_contracts
+    sellX = (past & sellsingular).astype(int) * 5 * n_contracts
     buyX = (prices_power < middle).astype(int) * 2 * n_contracts
 
     # STRAT --- Selling on negative sentiment
     past = (prices_power < lower).astype(int).rolling(5).mean() > 0.75
     buysingular = (prices_power > middle).astype(int).diff() > 0
-    buyY = (past & buysingular).astype(int) * 10 * n_contracts
+    buyY = (past & buysingular).astype(int) * 5 * n_contracts
     sellY = (prices_power > middle).astype(int) * 2 * n_contracts
 
     bear_tp = 0
@@ -86,18 +86,18 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
 
     if ts_contract in map_contract_to_score.keys():
         _scores = df_scores[[map_contract_to_score[ts_contract], "relevance"]]
-        _scores["day"] = [x.floor("D") if x.hour < 16 else x.ceil("D") for x in df_scores.index]
+        _scores["day"] = [x.floor("D") if x.hour <= 15 else x.ceil("D") for x in df_scores.index]
         _scores["val"] = _scores[map_contract_to_score[ts_contract]] * _scores["relevance"]
 
         scores = _scores.groupby("day")["val"].sum() / _scores.groupby("day")["relevance"].sum()
 
         # STRAT --- Bullish sentiment jumps => Buy
-        bull_ext = (scores - idx_sentiment).clip(lower=0) * 1 / 100. * mw_maximum
+        bull_ext = (scores - idx_sentiment).clip(lower=0) * 1 / 200. * mw_maximum
         #bull_tp = bull_ext.shift(1) * 0.2 + bull_ext.shift(2) * 0.1 + bull_ext.shift(3) * 0.1
         bull_ext = bull_ext.reindex(idx_sentiment.index).fillna(0)
 
         # STRAT --- Bearish sentiment jumps => Sell
-        bear_ext = (scores - idx_sentiment).clip(upper=0) * -1 / 100. * mw_maximum
+        bear_ext = (scores - idx_sentiment).clip(upper=0) * -1 / 200. * mw_maximum
         #bear_tp = bear_ext.shift(1) * 0.2 + bear_ext.shift(2) * 0.1 + bear_ext.shift(3) * 0.1
         bear_ext = bear_ext.reindex(idx_sentiment.index).fillna(0)
 
@@ -107,8 +107,8 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     idx_sentiment_bull_abs = idx_sentiment.clip(lower=0).abs() / 100.
     idx_sentiment_bear_abs = idx_sentiment.clip(upper=0).abs() / 100.
 
-    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs #+ (bull_ext + bear_tp)
-    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs  #+ (bear_ext + bull_tp)
+    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs + (bull_ext + bear_tp)
+    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs  + (bear_ext + bull_tp)
 
     total_buy = total_buy[mask_trading]
     total_sell = total_sell[mask_trading]
