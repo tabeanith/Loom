@@ -79,18 +79,22 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     sellY = (prices_power > middle).astype(int) * 2 * n_contracts
 
 
-    if False:
+    if True:
+        sentiment_mean = idx_sentiment.rolling(10).mean()
+
         # STRAT --- Bullish sentiment jumps => Buy
-        bull_jump = (idx_sentiment.diff() > 0) & (idx_sentiment > 0)
-        bull_jump = bull_jump.astype(int) * idx_sentiment.diff().abs() * (1. - idx_sentiment / 100.)  # If sentiment is very high, dont react on jumps anymore
-        bull_tp = (idx_sentiment.diff() < 0) & (idx_sentiment > 0)
-        bull_tp = bull_tp.astype(int) * idx_sentiment.diff().abs() * (idx_sentiment / 100.) * 0.33  # take profit slower
+        bull_jump = (idx_sentiment - sentiment_mean).clip(lower=0) / 2.
+        bull_tp = bull_jump.shift(1) * 0.3 + bull_jump.shift(2) * 0.2 + bull_jump.shift(3) * 0.1
+        #bull_jump = bull_jump.astype(int) * idx_sentiment.diff().abs() * (1. - idx_sentiment / 100.)  # If sentiment is very high, dont react on jumps anymore
+        #bull_tp = (idx_sentiment.diff() < 0) & (idx_sentiment > 0)
+        #bull_tp = bull_tp.astype(int) * idx_sentiment.diff().abs() * (idx_sentiment / 100.) * 0.33  # take profit slower
 
         # STRAT --- Bearish sentiment jumps => Sell
-        bear_jump = (idx_sentiment.diff() < 0) & (idx_sentiment < 0)
-        bear_jump = bear_jump.astype(int) * idx_sentiment.diff().abs() * (1. - idx_sentiment.abs() / 100.)  # If sentiment is very high, dont react on jumps anymore
-        bear_tp = (idx_sentiment.diff() > 0) & (idx_sentiment < 0)
-        bear_tp = bear_tp.astype(int) * idx_sentiment.diff().abs() * (idx_sentiment.abs() / 100.) * 0.33  # take profit slower
+        bear_jump = (idx_sentiment - sentiment_mean).clip(upper=0) * -1. / 2.
+        bear_tp = bear_jump.shift(1) * 0.3 + bear_jump.shift(2) * 0.2 + bear_jump.shift(3) * 0.1
+        #bear_jump = bear_jump.astype(int) * idx_sentiment.diff().abs() * (1. - idx_sentiment.abs() / 100.)  # If sentiment is very high, dont react on jumps anymore
+        #bear_tp = (idx_sentiment.diff() > 0) & (idx_sentiment < 0)
+        ##bear_tp = bear_tp.astype(int) * idx_sentiment.diff().abs() * (idx_sentiment.abs() / 100.) * 0.33  # take profit slower
 
 
     # From buys and sells, weight them based on sentiment:
@@ -98,10 +102,8 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     idx_sentiment_bull_abs = idx_sentiment.clip(lower=0).abs() / 100.
     idx_sentiment_bear_abs = idx_sentiment.clip(upper=0).abs() / 100.
 
-
-    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs #+ bull_jump + bear_tp
-    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs #+ bull_tp + bear_jump
-
+    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs + (bear_jump + bull_tp)* idx_sentiment_bear_abs
+    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs + (bull_jump + bear_tp)* idx_sentiment_bear_abs
 
 
     total_buy = total_buy[mask_trading]
@@ -254,7 +256,7 @@ if __name__ == "__main__":
         df_prices_power = curves_power.resample(contract_sampling).mean().T
         df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-        for ts_contract in pd.date_range(pd.Timestamp(date(2025, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
+        for ts_contract in pd.date_range(pd.Timestamp(date(2026, 8, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
             ts_start_trading = ts_contract - MonthBegin(start_n_month_before_del)
 
             mtm, open_volume = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, mw_maximum, df_prices_power,
