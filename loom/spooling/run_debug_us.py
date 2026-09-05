@@ -118,9 +118,9 @@ if __name__ == "__main__":
 
 
         result_mtm = mtm2 #  mtm1 + mtm2
-        result_mtm = mtm1 #+ mtm2
+        #result_mtm = mtm1 #+ mtm2
         result_open_volume = open_volume2 # open_volume1 + open_volume2
-       result_open_volume = open_volume1 #+ open_volume2
+        #result_open_volume = open_volume1 #+ open_volume2
         print("mtm", result_mtm.iloc[-1])
         print("pips trading", result_mtm.iloc[-1] / result_open_volume[result_open_volume != 0].abs().mean())
         print("pips market", prices.iloc[-1] - prices.iloc[0])
