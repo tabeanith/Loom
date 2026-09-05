@@ -48,9 +48,9 @@ if __name__ == "__main__":
     if True:
 
         #  ----------------------------------------------  Market prices  ------------------------------------------
-        ts_go = pd.Timestamp(date(2026, 8, 1), tz=tz)
+        ts_go = pd.Timestamp(date(2026, 8, 20), tz=tz)
 
-        symbol = "MGC"
+        symbol = "NQ"
         #symbol = "MGC"
         tf = "5min"
         df = read_dataframe(symbol, tf)
@@ -58,6 +58,13 @@ if __name__ == "__main__":
         prices = _df["open"].resample("5min").first()
         prices = _df["open"].resample("5min").first()
         prices = prices.dropna()
+
+
+        # Trading
+        idxUS = _df.index.tz_convert(tz='US/Eastern')
+        is_friday_evening = (idxUS.dayofweek == 4) & (idxUS.hour >= 16)   # Friday evening
+        _df["legit_exposure"] = (idxUS.hour >= 7) & (idxUS.hour <= 20) & ~is_friday_evening
+        _df["legit_exposure"] = True
 
 
         #  ----------------------------------------------  Market sentiment  ---------------------------------------
@@ -72,10 +79,13 @@ if __name__ == "__main__":
 
         df_result["hours"] = df_result.index.ceil("5min")
         scoreH = df_result.groupby(by="hours")["score"].mean()
+        scoreHmean = scoreH.rolling(5).mean()#.reindex(prices.index).ffill()
         sentimentH = df_result.groupby(by="hours")["sentiment"].mean()
-
-        scoreHmean = scoreH.rolling(10).mean()#.reindex(prices.index).ffill()
-        sentimentHmean = sentimentH.rolling(10).mean()#.reindex(prices.index).ffill()
+        sentimentHmean = sentimentH.rolling(5).mean()#.reindex(prices.index).ffill()
+        idxUS = scoreH.index.tz_convert(tz='US/Eastern')
+        is_friday_evening = (idxUS.dayofweek == 4) & (idxUS.hour >= 16)   # Friday evening
+        sentiment_exposure = (idxUS.hour >= 7) & (idxUS.hour <= 20) & ~is_friday_evening
+        sentiment_exposure = idxUS.hour >= 0
 
         #  ----------------------------------------------  Strats  -------------------------------------------------
 
@@ -85,8 +95,8 @@ if __name__ == "__main__":
         _maximum = pd.Series(index=prices.index, data=200)
         _minimum = _maximum * -1.
 
-        buys = ( (pricesQ < 0.3)).astype(int) * 1
-        sells = (  (pricesQ > 0.7)).astype(int) * 1
+        buys = ( (pricesQ < 0.3)).astype(int) * 1 * _df["legit_exposure"].astype(int)
+        sells = (  (pricesQ > 0.7)).astype(int) * 1 * _df["legit_exposure"].astype(int)
 
         mtm, open_volume = calculate_mtm_from_buy_sell(buys, sells, prices)
         _open_volume = (open_volume / 1.).astype(int) * 2.
@@ -95,8 +105,8 @@ if __name__ == "__main__":
 
 
 
-        buys1 = (scoreH - scoreHmean).clip(lower=0)
-        sells1 = (scoreH - scoreHmean).clip(upper=0) * -1.
+        buys1 = (scoreH - scoreHmean).clip(lower=0) * 3 * sentiment_exposure.astype(int)
+        sells1 = (scoreH - scoreHmean).clip(upper=0) * -1. * 3 * sentiment_exposure.astype(int)
         mtm, open_volume = calculate_mtm_from_buy_sell(buys1, sells1, prices)
         #_open_volume = (open_volume / 1.).astype(int) * 5.
         open_volume_bounded = get_bounded_open_volume(open_volume, _maximum, _minimum)
@@ -108,9 +118,9 @@ if __name__ == "__main__":
 
 
         result_mtm = mtm2 #  mtm1 + mtm2
-        result_mtm = mtm1 + mtm2
+        #result_mtm = mtm1 #+ mtm2
         result_open_volume = open_volume2 # open_volume1 + open_volume2
-        result_open_volume = open_volume1 + open_volume2
+        #result_open_volume = open_volume1 #+ open_volume2
         print("mtm", result_mtm.iloc[-1])
         print("pips trading", result_mtm.iloc[-1] / result_open_volume[result_open_volume != 0].abs().mean())
         print("pips market", prices.iloc[-1] - prices.iloc[0])

@@ -248,7 +248,7 @@ if __name__ == "__main__":
 
 
     # Plot datat for a single contract
-    ts_contract = pd.Timestamp(date(2026, 9, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 12, 1), tz=tz)
 
     create_plot(ts_contract, df_prices_power, df_scores, df_contract_sentiment, map_contract_to_score,list_of_topics, list_of_colors)
 
