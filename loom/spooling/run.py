@@ -33,7 +33,6 @@ if __name__ == "__main__":
     topic2 = T02_Weather()
     topic3 = T03_Gas_Fuel()
     topic10 = T10_US_Rates()
-    topic11 = T11_US_Stocks()
 
 
     # ----------------------------  Check for new links appearing on websites ----------------------------------------

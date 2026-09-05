@@ -175,8 +175,8 @@ class T01_EU_Power(UniversalTopic):
                 Synopsis:
                     [Write a concise content summary]
 
-                Q01. Is the content relevant to EU energy, EU commodities, German power market prices, German energy economics?
-                Relevance: x (x [YES, NO, IMPLICIT])
+                Q01.Is the content's main message about EU energy, EU commodities, German power market prices, German energy economics?
+                Relevance: x (x [YES, NO])
                 
                 Q02. Is the content confirming already known information or reporting very new/uncertain risks?
                 Risk score: y (y on a scale of 0 [already known and expected] to 100 [very unexpected/uncertain])
