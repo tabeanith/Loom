@@ -42,15 +42,15 @@ from matplotlib import pyplot as plt
 if __name__ == "__main__":
 
     topic = T10_US_Rates()
-    topic = T11_US_Stocks()
+    #topic = T11_US_Stocks()
 
     # For debugging only
     if True:
 
         #  ----------------------------------------------  Market prices  ------------------------------------------
-        ts_go = pd.Timestamp(date(2026, 8, 20), tz=tz)
+        ts_go = pd.Timestamp(date(2026, 8, 1), tz=tz)
 
-        symbol = "ES"
+        symbol = "MGC"
         #symbol = "MGC"
         tf = "5min"
         df = read_dataframe(symbol, tf)
@@ -108,7 +108,9 @@ if __name__ == "__main__":
 
 
         result_mtm = mtm2 #  mtm1 + mtm2
+        result_mtm = mtm1 + mtm2
         result_open_volume = open_volume2 # open_volume1 + open_volume2
+        result_open_volume = open_volume1 + open_volume2
         print("mtm", result_mtm.iloc[-1])
         print("pips trading", result_mtm.iloc[-1] / result_open_volume[result_open_volume != 0].abs().mean())
         print("pips market", prices.iloc[-1] - prices.iloc[0])
@@ -123,7 +125,7 @@ if __name__ == "__main__":
         ax2.scatter(x=scores.index, y=scores.values, label="scores", marker='o', linestyle='None')
         ax2.stem(scores.index, scores.values)
         scoreHmean.plot(ax=ax2, label="scoreHmean", color="blue")
-        sentimentH.plot(ax=ax2, label="sentimentH", color="cyan")
+        scoreH.plot(ax=ax2, label="sentimentH", color="cyan")
        # (-sentiment_bear).plot(ax=ax2, label="sentiment_bear", color="red")
         #sentiment.plot(ax=ax2, label="sentiment", color="orange")
         ax2.axhline(y=0, color='black', linewidth=0.8, linestyle='-')
