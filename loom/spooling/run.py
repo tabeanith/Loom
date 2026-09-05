@@ -33,13 +33,17 @@ if __name__ == "__main__":
     topic2 = T02_Weather()
     topic3 = T03_Gas_Fuel()
     topic10 = T10_US_Rates()
+    topic11 = T11_US_Stocks()
 
 
     # ----------------------------  Check for new links appearing on websites ----------------------------------------
     if scrape_for_new_articles:
 
         # US Interest Rates
-        Reuters().run_scraper_to_topic_pipeline(["fed", "rate hike", "rate cut", "nonfarm payroll"], topic10)
+        Reuters().run_scraper_to_topic_pipeline(["fed", "us rate hike", "rate hike", "us rate cut", "rate cut", "nonfarm payroll", "us treasury"], topic10)
+
+        # US Stocks
+        Reuters().run_scraper_to_topic_pipeline(["wall street", "us stocks", "us economy", "us war"], topic11)
 
         # EU weather
         SevereWeatherEurope().run_scraper_to_topic_pipeline(topic2)
@@ -61,7 +65,7 @@ if __name__ == "__main__":
 
     print("\n Check for new aricles to be processed by AI \n")
 
-    for topic in [topic10]:
+    for topic in [topic10, topic11]:
         ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True)
 
     # Go through all topics

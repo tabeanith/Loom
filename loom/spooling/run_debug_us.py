@@ -48,7 +48,7 @@ if __name__ == "__main__":
     if True:
 
         #  ----------------------------------------------  Market prices  ------------------------------------------
-        ts_go = pd.Timestamp(date(2026, 8, 20), tz=tz)
+        ts_go = pd.Timestamp(date(2026, 1, 20), tz=tz)
 
         symbol = "NQ"
         #symbol = "MGC"
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
         #  ----------------------------------------------  Strats  -------------------------------------------------
 
-        pricesQ = numba_rolling_quantile_q_value(prices.to_numpy(dtype=np.float32), 24*3)
+        pricesQ = numba_rolling_quantile_q_value(prices.to_numpy(dtype=np.float32), 24*2)
         pricesQ = pd.Series(index=prices.index, data=pricesQ)
 
         _maximum = pd.Series(index=prices.index, data=200)
@@ -118,9 +118,9 @@ if __name__ == "__main__":
 
 
         result_mtm = mtm2 #  mtm1 + mtm2
-        #result_mtm = mtm1 #+ mtm2
+        result_mtm = mtm1 #+ mtm2
         result_open_volume = open_volume2 # open_volume1 + open_volume2
-        #result_open_volume = open_volume1 #+ open_volume2
+       result_open_volume = open_volume1 #+ open_volume2
         print("mtm", result_mtm.iloc[-1])
         print("pips trading", result_mtm.iloc[-1] / result_open_volume[result_open_volume != 0].abs().mean())
         print("pips market", prices.iloc[-1] - prices.iloc[0])
@@ -139,9 +139,8 @@ if __name__ == "__main__":
        # (-sentiment_bear).plot(ax=ax2, label="sentiment_bear", color="red")
         #sentiment.plot(ax=ax2, label="sentiment", color="orange")
         ax2.axhline(y=0, color='black', linewidth=0.8, linestyle='-')
-
-        _maximum.plot(ax=ax2, label="mtm", color="blue", linestyle='--')
-        _minimum.plot(ax=ax2, label="mtm", color="blue", linestyle='--')
+        #_maximum.plot(ax=ax3, label="mtm", color="blue", linestyle='--')
+        #_minimum.plot(ax=ax3, label="mtm", color="blue", linestyle='--')
 
 
         result_open_volume.plot(ax=ax3, label="open_volume", color="blue")

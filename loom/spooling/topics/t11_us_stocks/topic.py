@@ -235,17 +235,17 @@ class T11_US_Stocks(UniversalTopic):
                 Synopsis:
                     [Write a concise content summary]
 
-                Q01. Is the content relevant to US economy, US yields, US interest rates and US stock market pricing?
-                Relevance: x (x [YES, NO, IMPLICIT])
-    
+                Q01. Is the content's main message on the US economy, US stocks, US investments?
+                Relevance: x (x [YES, NO])
+                
                 Q02. Is the content confirming already known information or reporting very new/uncertain risks?
                 Risk score: y (y on a scale of 0 [already known and expected] to 100 [very unexpected/uncertain])
 
-                Q03. Is the content explicitly about bullish impact on the US stock markets?
+                Q03. Is the content's main message about bullish impact on the US stock markets?
                 Explicit: x (x [YES, NO])
                 Impact score: y (y on a scale of 0 [no impact] to 100 [extreme bullish])
                 
-                Q04. Is the content explicitly about bearish impact on the US stock markets?
+                Q04. Is the content's main message about bearish impact on the US stock markets?
                 Explicit: x (x [YES, NO])
                 Impact score: y (y on a scale of 0 [no impact] to 100 [extreme bearish])
                 """
