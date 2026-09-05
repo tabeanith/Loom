@@ -334,3 +334,15 @@ class T11_US_Stocks(UniversalTopic):
 
 
 
+
+if __name__ == "__main__":
+
+    # TODO: This is just for fixing something
+    if False:
+        topic = T11_US_Stocks()
+        data = topic.get_all_topic_answers()
+        uuids = data.keys()
+
+        topic.carry_articles(uuids)
+
+

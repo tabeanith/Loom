@@ -42,6 +42,7 @@ from matplotlib import pyplot as plt
 if __name__ == "__main__":
 
     topic = T10_US_Rates()
+    topic = T11_US_Stocks()
 
     # For debugging only
     if True:
@@ -49,7 +50,7 @@ if __name__ == "__main__":
         #  ----------------------------------------------  Market prices  ------------------------------------------
         ts_go = pd.Timestamp(date(2026, 8, 20), tz=tz)
 
-        symbol = "NQ"
+        symbol = "ES"
         #symbol = "MGC"
         tf = "5min"
         df = read_dataframe(symbol, tf)
@@ -61,10 +62,10 @@ if __name__ == "__main__":
 
         #  ----------------------------------------------  Market sentiment  ---------------------------------------
 
-        uuid = "4d48a78c-0d3b-5598-b452-d15591ac80d2"
+        #uuid = "4d48a78c-0d3b-5598-b452-d15591ac80d2"
         #ask_and_answer_for_uuid(topic, uuid=uuid, use_ai=True)
-        txt = topic.load_llm_answer(uuid)
-        print(txt)
+        #txt = topic.load_llm_answer(uuid)
+        #print(txt)
         df_ref = topic.generate_references()
         df_result = topic.calculate_scores(df_ref)
         df_result = df_result.dropna(axis=0)
@@ -78,7 +79,7 @@ if __name__ == "__main__":
 
         #  ----------------------------------------------  Strats  -------------------------------------------------
 
-        pricesQ = numba_rolling_quantile_q_value(prices.to_numpy(dtype=np.float32), 24*2)
+        pricesQ = numba_rolling_quantile_q_value(prices.to_numpy(dtype=np.float32), 24*3)
         pricesQ = pd.Series(index=prices.index, data=pricesQ)
 
         _maximum = pd.Series(index=prices.index, data=200)
@@ -106,8 +107,8 @@ if __name__ == "__main__":
 
 
 
-        result_mtm =  mtm1 + mtm2
-        result_open_volume = open_volume1 + open_volume2
+        result_mtm = mtm2 #  mtm1 + mtm2
+        result_open_volume = open_volume2 # open_volume1 + open_volume2
         print("mtm", result_mtm.iloc[-1])
         print("pips trading", result_mtm.iloc[-1] / result_open_volume[result_open_volume != 0].abs().mean())
         print("pips market", prices.iloc[-1] - prices.iloc[0])
