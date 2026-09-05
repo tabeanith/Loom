@@ -40,7 +40,7 @@ if __name__ == "__main__":
     if scrape_for_new_articles:
 
         # US Interest Rates
-        Reuters().run_scraper_to_topic_pipeline(["fed", "hawkish", "dovish", "nonfarm payroll"], topic10)
+        Reuters().run_scraper_to_topic_pipeline(["fed", "rate hike", "rate cut", "nonfarm payroll"], topic10)
 
         # EU weather
         SevereWeatherEurope().run_scraper_to_topic_pipeline(topic2)
@@ -68,6 +68,7 @@ if __name__ == "__main__":
     # Go through all topics
     for topic in [topic2, topic3]:
         ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True)
+
 
 
 
