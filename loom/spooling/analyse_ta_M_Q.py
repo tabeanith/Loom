@@ -86,18 +86,18 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
 
     if ts_contract in map_contract_to_score.keys():
         _scores = df_scores[[map_contract_to_score[ts_contract], "relevance"]]
-        _scores["day"] = _scores.index.floor("D")
+        _scores["day"] = [x.floor("D") if x.hour < 16 else x.ceil("D") for x in df_scores.index]
         _scores["val"] = _scores[map_contract_to_score[ts_contract]] * _scores["relevance"]
 
         scores = _scores.groupby("day")["val"].sum() / _scores.groupby("day")["relevance"].sum()
 
         # STRAT --- Bullish sentiment jumps => Buy
-        bull_ext = (scores - idx_sentiment).clip(lower=0) * 1
+        bull_ext = (scores - idx_sentiment).clip(lower=0) * 1 / 100. * mw_maximum
         #bull_tp = bull_ext.shift(1) * 0.2 + bull_ext.shift(2) * 0.1 + bull_ext.shift(3) * 0.1
         bull_ext = bull_ext.reindex(idx_sentiment.index).fillna(0)
 
         # STRAT --- Bearish sentiment jumps => Sell
-        bear_ext = (scores - idx_sentiment).clip(upper=0) * -1. * 1
+        bear_ext = (scores - idx_sentiment).clip(upper=0) * -1 / 100. * mw_maximum
         #bear_tp = bear_ext.shift(1) * 0.2 + bear_ext.shift(2) * 0.1 + bear_ext.shift(3) * 0.1
         bear_ext = bear_ext.reindex(idx_sentiment.index).fillna(0)
 
@@ -107,8 +107,8 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     idx_sentiment_bull_abs = idx_sentiment.clip(lower=0).abs() / 100.
     idx_sentiment_bear_abs = idx_sentiment.clip(upper=0).abs() / 100.
 
-    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs + (bull_ext + bear_tp)
-    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs  + (bear_ext + bull_tp)
+    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs #+ (bull_ext + bear_tp)
+    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs  #+ (bear_ext + bull_tp)
 
     total_buy = total_buy[mask_trading]
     total_sell = total_sell[mask_trading]
@@ -243,7 +243,7 @@ if __name__ == "__main__":
     df_prices_power = curves_power.resample(contract_sample).mean().T
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-    ts_contract = pd.Timestamp(date(2026, 5, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 12, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(4)
     mw_sizing = 5
     mw_maximum = 100
@@ -259,7 +259,7 @@ if __name__ == "__main__":
         df_prices_power = curves_power.resample(contract_sampling).mean().T
         df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-        for ts_contract in pd.date_range(pd.Timestamp(date(2026, 8, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
+        for ts_contract in pd.date_range(pd.Timestamp(date(2026, 1, 1), tz=tz), pd.Timestamp(date(2027, 12, 1), tz=tz), freq=contract_sampling):
             ts_start_trading = ts_contract - MonthBegin(start_n_month_before_del)
 
             mtm, open_volume = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, mw_maximum, df_prices_power,
