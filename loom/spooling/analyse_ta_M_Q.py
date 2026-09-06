@@ -97,8 +97,8 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
         scores = _scores.groupby("day")["val"].sum() / _scores.groupby("day")["relevance"].sum()
         scores = scores.reindex(idx_sentiment.index).ffill()
 
-        impulse_buy = (scores > idx_sentiment.rolling(10).quantile(0.9)).astype(int) * n_contracts * 2
-        impulse_sell = (scores < idx_sentiment.rolling(10).quantile(0.1)).astype(int) * n_contracts * 2
+        impulse_buy = (scores > idx_sentiment.rolling(10).quantile(0.9)).astype(int) * 15
+        impulse_sell = (scores < idx_sentiment.rolling(10).quantile(0.1)).astype(int) * 15
         rw = 5
         buys_closing = generate_closing_profile_from_trade_signals(rw, impulse_buy)
         sells_closing = generate_closing_profile_from_trade_signals(rw, impulse_sell)
