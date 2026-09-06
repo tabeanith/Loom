@@ -46,9 +46,11 @@ if __name__ == "__main__":
     link = "https://www.reuters.com/business/media-telecom/european-shares-edge-higher-bond-yields-ease-2026-09-03/"
     _uuid = uuid.uuid5(uuid.NAMESPACE_DNS, link)
 
-    _uuid = "bb788f7a-df96-55a1-bacf-94bc323b9fee"
+    _uuid = "9854bac4-bb66-58c3-85a8-73045641d510"
+    _uuid = "a6097cb2-100a-5e3a-b8ec-2c7dcd0c0f6d"
 
     topic = T10_US_Rates()
+    topic = T11_US_Stocks()
 
     txt = find_scraped_article_content(_uuid)
     md_txt = Markdown(txt)
