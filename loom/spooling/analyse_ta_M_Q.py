@@ -97,8 +97,8 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
         scores = _scores.groupby("day")["val"].sum() / _scores.groupby("day")["relevance"].sum()
         scores = scores.reindex(idx_sentiment.index).ffill()
 
-        impulse_buy = (scores > idx_sentiment.rolling(10).quantile(0.9)).astype(int) * 15
-        impulse_sell = (scores < idx_sentiment.rolling(10).quantile(0.1)).astype(int) * 15
+        impulse_buy = (scores > idx_sentiment.rolling(10).quantile(0.9)).astype(int) * 10
+        impulse_sell = (scores < idx_sentiment.rolling(10).quantile(0.1)).astype(int) * 10
         rw = 5
         buys_closing = generate_closing_profile_from_trade_signals(rw, impulse_buy)
         sells_closing = generate_closing_profile_from_trade_signals(rw, impulse_sell)
@@ -182,7 +182,7 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
 
 
 
-def print_to_do(df_open_pos, ts_tradeday=None):
+def print_to_do(df_open_pos, contract_class: str, ts_tradeday=None):
     df_open_pos.index = pd.to_datetime(df_open_pos.index, utc=True).tz_convert(tz).floor("D")
 
     if ts_tradeday is None:
@@ -202,11 +202,13 @@ def print_to_do(df_open_pos, ts_tradeday=None):
 
     contracts = []
     for ts in stack.index:
-        contract_str = f"{ts.year} {ts.month_name()} | M{ts.month} | Q{ts.quarter} "
+        if contract_class == "M":
+            contract_str = f"{ts.year} | M{ts.month}"
+        if contract_class == "Q":
+            contract_str = f"{ts.year} | Q{ts.quarter} "
         contracts.append(contract_str)
 
     stack.index = contracts
-    print(stack)
     return stack
 
 
@@ -248,10 +250,10 @@ if __name__ == "__main__":
     df_prices_power = curves_power.resample(contract_sample).mean().T
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-    ts_contract = pd.Timestamp(date(2026, 8, 1), tz=tz)
-    ts_start_trading = ts_contract - MonthBegin(6)
+    ts_contract = pd.Timestamp(date(2026, 9, 1), tz=tz)
+    ts_start_trading = ts_contract - MonthBegin(4)
     mw_sizing = 5
-    mw_maximum = 100
+    mw_maximum = 50
 
     mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, mw_maximum, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=True)
 
@@ -322,24 +324,31 @@ if __name__ == "__main__":
 
 
     today = pd.Timestamp.now(tz=tz).floor("D")
-    tds = [today - BDay(4),
-           today - BDay(3),
-           today - BDay(2),
-           today - BDay(1),
-           today,
-           ]
+    tds = [
+        #today - BDay(7),
+       # today - BDay(6),
+        today - BDay(5),
+        today - BDay(4),
+        today - BDay(3),
+        today - BDay(2),
+        today - BDay(1),
+        today,
+        ]
     _total_pos = []
     for td in tds:
-        df_M = print_to_do(df_all_open_volume_months, td)
-        df_Q = print_to_do(df_all_open_volume_quarters, td)
+        df_M = print_to_do(df_all_open_volume_months, "M", td)
+        df_Q = print_to_do(df_all_open_volume_quarters, "Q", td)
         
         total = (pd.concat([df_M, df_Q], axis=0))["Total Position ending td"]
         _total_pos.append(total)
 
 
     df_total_pos = pd.concat(_total_pos, axis=1)
+    df_total_pos = df_total_pos.ffill(axis=1)
     df_total_pos.columns = tds
     df_to_be_traded = df_total_pos.diff(axis=1)
+
+    print(df_total_pos)
 
 
 
