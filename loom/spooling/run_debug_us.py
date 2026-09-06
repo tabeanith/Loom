@@ -54,7 +54,7 @@ if __name__ == "__main__":
     if True:
 
         #  ----------------------------------------------  Market prices  ------------------------------------------
-        ts_go = pd.Timestamp(date(2026, 8, 1), tz=tz)
+        ts_go = pd.Timestamp(date(2026, 1, 1), tz=tz)
 
         symbol = "ES"
         #symbol = "MGC"
@@ -74,31 +74,16 @@ if __name__ == "__main__":
         df11 = topic11.calculate_scores(topic11.generate_references()).dropna(axis=0)
         df11 = df11[df11["relevance"] == 1.]
 
+        _maximum = pd.Series(index=prices.index, data=200)
+        _minimum = _maximum * -1.
 
-        df10["tf"] = df10.index.ceil("h")
-        score10 = df10.groupby(by="tf")["score"].mean()
-        score10mean = score10.rolling(12).quantile(0.5)
-        impulse_score10 = score10 - score10mean
-
-        df11["tf"] = df11.index.ceil("h")
-        score11 = df11.groupby(by="tf")["score"].mean()
-        score11mean = score11.rolling(12).quantile(0.5)
-        impulse_score11 = score11 - score11mean
-
-
-        impulse_score = impulse_score10
-        scalevol = 3
-
-        #  ----------------------------------------------  Strats  -------------------------------------------------
+        #  -------------------------------------  Strat 1: Price quantiles  ---------------------------------------
 
         pricesQ = numba_rolling_quantile_q_value(prices.to_numpy(dtype=np.float32), 24*2)
         pricesQ = pd.Series(index=prices.index, data=pricesQ)
 
-        _maximum = pd.Series(index=prices.index, data=200)
-        _minimum = _maximum * -1.
-
-        buys = ( (pricesQ < 0.3)).astype(int) * 1
-        sells = (  (pricesQ > 0.7)).astype(int) * 1
+        buys = ( (pricesQ < 0.3)).astype(int) * 3
+        sells = (  (pricesQ > 0.7)).astype(int) * 3
 
         mtm, open_volume = calculate_mtm_from_buy_sell(buys, sells, prices)
         _open_volume = (open_volume / 1.).astype(int) * 2.
@@ -106,15 +91,24 @@ if __name__ == "__main__":
         mtm1, open_volume1 = calculate_mtm_from_open_position(open_volume_bounded / 200. * 10., prices)
 
 
+        #  ----------------------------  Strat 2: Impulses on Interest Rates  ---------------------------------------
 
 
-        impulse_buy = impulse_score.clip(lower=0) * scalevol
-        impulse_sell = impulse_score.clip(upper=0) * -1. * scalevol
+        df10["tf"] = df10.index.ceil("h")
+        score10 = df10.groupby(by="tf")["score"].mean()
+        score10mean = score10.rolling(5).quantile(0.5)
+        impulse_score10 = score10 - score10mean
+        scalevol = 3
 
-        rw = 12
-        buys_closing = generate_closing_profile_from_trade_signals(impulse_buy, rw, prices)
-        sells_closing = generate_closing_profile_from_trade_signals(impulse_sell, rw, prices)
+        impulse_buy = impulse_score10.clip(lower=0) * scalevol
+        impulse_sell = impulse_score10.clip(upper=0) * -1. * scalevol
 
+        impulse_buy = impulse_buy.reindex(prices.index).fillna(0.)
+        impulse_sell = impulse_sell.reindex(prices.index).fillna(0.)
+
+        rw = 24
+        buys_closing = generate_closing_profile_from_trade_signals(rw, impulse_buy)
+        sells_closing = generate_closing_profile_from_trade_signals(rw, impulse_sell)
 
 
         mtm, open_volume = calculate_mtm_from_buy_sell(impulse_buy + sells_closing, impulse_sell + buys_closing, prices)
@@ -122,17 +116,33 @@ if __name__ == "__main__":
         mtm2, open_volume2 = calculate_mtm_from_open_position(open_volume_bounded / 200. * 10., prices)
 
 
+        #  -------------------------  Strat 3: Impulses on general sentiment  ---------------------------------------
 
-        result_mtm = mtm2 #  mtm1 + mtm2
-        #result_mtm = mtm1 #+ mtm2
-        result_open_volume = open_volume2 # open_volume1 + open_volume2
-        #result_open_volume = open_volume1 #+ open_volume2
-        print("mtm", result_mtm.iloc[-1])
-        print("pips trading", result_mtm.iloc[-1] / result_open_volume[result_open_volume != 0].abs().mean())
-        print("pips market", prices.iloc[-1] - prices.iloc[0])
+        df11["tf"] = df11.index.ceil("h")
+        score11 = df11.groupby(by="tf")["score"].mean()
+        scalevol = 3
+
+        impulse_buy = (score11 > score11.rolling(24).quantile(0.8)).astype(int) *  100
+        impulse_sell = (score11 < score11.rolling(24).quantile(0.2)).astype(int) * 100
+
+        impulse_buy = impulse_buy.reindex(prices.index).fillna(0.)
+        impulse_sell = impulse_sell.reindex(prices.index).fillna(0.)
+
+        rw = 48
+        buys_closing = generate_closing_profile_from_trade_signals(rw, impulse_buy)
+        sells_closing = generate_closing_profile_from_trade_signals(rw, impulse_sell)
+
+        mtm, open_volume = calculate_mtm_from_buy_sell(impulse_buy + sells_closing, impulse_sell + buys_closing, prices)
+        open_volume_bounded = get_bounded_open_volume(open_volume, _maximum, _minimum)
+        mtm3, open_volume3 = calculate_mtm_from_open_position(open_volume_bounded / 200. * 10., prices)
+
+
 
 
         #  ----------------------------------------------  Plot  -------------------------------------------------
+
+        print("mtm1", mtm1.iloc[-1], "mtm2", mtm2.iloc[-1])
+        print("pips market", prices.iloc[-1] - prices.iloc[0])
 
         fig, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4, sharex=True)
         score10 = df10["score"]
@@ -149,12 +159,16 @@ if __name__ == "__main__":
         #_minimum.plot(ax=ax3, label="mtm", color="blue", linestyle='--')
 
 
-        result_open_volume.plot(ax=ax3, label="open_volume", color="blue")
+        open_volume1.plot(ax=ax3, label="open_volume1", color="grey")
+        open_volume2.plot(ax=ax3, label="open_volume2", color="blue")
+        open_volume3.plot(ax=ax3, label="open_volume3", color="purple")
+        ((open_volume1 + open_volume2 + open_volume3) / 3.).plot(ax=ax3, label="all", color="orange")
         ax3.axhline(y=0, color='black', linewidth=0.8, linestyle='-')
 
-        result_mtm.plot(ax=ax4, label="mtm", color="black")
-
-
+        mtm1.plot(ax=ax4, label="mtm1", color="grey")
+        mtm2.plot(ax=ax4, label="mtm2", color="blue")
+        mtm3.plot(ax=ax4, label="mtm3", color="purple")
+        ((mtm1 + mtm2 + mtm3) / 3.).plot(ax=ax4, label="all", color="orange")
 
         plt.legend()
         plt.show()

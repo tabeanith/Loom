@@ -33,6 +33,7 @@ from loom.spooling.analyse_utils import calculate_mtm_from_buy_sell
 from loom.spooling.analyse_utils import calculate_mtm_from_open_position
 from loom.spooling.analyse_utils import get_bounded_open_volume
 from loom.spooling.analyse_utils import get_delivery_adjusted_open_volume
+from loom.spooling.analyse_utils import generate_closing_profile_from_trade_signals
 
 
 
@@ -83,6 +84,10 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     bull_ext = 0
     bear_ext = 0
     scores = pd.Series(index=idx_sentiment.index, data=np.nan)
+    impulse_buy = pd.Series(index=idx_sentiment.index, data=0)
+    impulse_sell = pd.Series(index=idx_sentiment.index, data=0)
+    buys_closing = pd.Series(index=idx_sentiment.index, data=0)
+    sells_closing = pd.Series(index=idx_sentiment.index, data=0)
 
     if ts_contract in map_contract_to_score.keys():
         _scores = df_scores[[map_contract_to_score[ts_contract], "relevance"]]
@@ -90,16 +95,24 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
         _scores["val"] = _scores[map_contract_to_score[ts_contract]] * _scores["relevance"]
 
         scores = _scores.groupby("day")["val"].sum() / _scores.groupby("day")["relevance"].sum()
+        scores = scores.reindex(idx_sentiment.index).ffill()
 
         # STRAT --- Bullish sentiment jumps => Buy
-        bull_ext = (scores - idx_sentiment).clip(lower=0) * 1 / 200. * mw_maximum
+       # bull_ext = (scores - idx_sentiment).clip(lower=0) * 1 / 200. * mw_maximum
         #bull_tp = bull_ext.shift(1) * 0.2 + bull_ext.shift(2) * 0.1 + bull_ext.shift(3) * 0.1
-        bull_ext = bull_ext.reindex(idx_sentiment.index).fillna(0)
+       # bull_ext = bull_ext.reindex(idx_sentiment.index).fillna(0)
 
         # STRAT --- Bearish sentiment jumps => Sell
-        bear_ext = (scores - idx_sentiment).clip(upper=0) * -1 / 200. * mw_maximum
+       # bear_ext = (scores - idx_sentiment).clip(upper=0) * -1 / 200. * mw_maximum
         #bear_tp = bear_ext.shift(1) * 0.2 + bear_ext.shift(2) * 0.1 + bear_ext.shift(3) * 0.1
-        bear_ext = bear_ext.reindex(idx_sentiment.index).fillna(0)
+        #bear_ext = bear_ext.reindex(idx_sentiment.index).fillna(0)
+
+
+        impulse_buy = (scores > idx_sentiment.rolling(14).quantile(0.9)).astype(int) * n_contracts * 2
+        impulse_sell = (scores < idx_sentiment.rolling(14).quantile(0.1)).astype(int) * n_contracts * 2
+        rw = 5
+        buys_closing = generate_closing_profile_from_trade_signals(rw, impulse_buy)
+        sells_closing = generate_closing_profile_from_trade_signals(rw, impulse_sell)
 
 
     # From buys and sells, weight them based on sentiment:
@@ -107,8 +120,11 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     idx_sentiment_bull_abs = idx_sentiment.clip(lower=0).abs() / 100.
     idx_sentiment_bear_abs = idx_sentiment.clip(upper=0).abs() / 100.
 
-    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs + (bull_ext + bear_tp)
-    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs  + (bear_ext + bull_tp)
+    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs + (bull_ext + bear_tp) + impulse_buy + sells_closing
+    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs  + (bear_ext + bull_tp) + buys_closing + impulse_sell
+
+    total_buy = impulse_buy + sells_closing
+    total_sell = buys_closing + impulse_sell
 
     total_buy = total_buy[mask_trading]
     total_sell = total_sell[mask_trading]
@@ -202,7 +218,7 @@ def print_to_do(df_open_pos, ts_tradeday=None):
 
     stack.index = contracts
     print(stack)
-
+    return stack
 
 
 
@@ -243,7 +259,7 @@ if __name__ == "__main__":
     df_prices_power = curves_power.resample(contract_sample).mean().T
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-    ts_contract = pd.Timestamp(date(2026, 12, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 8, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(4)
     mw_sizing = 5
     mw_maximum = 100
@@ -316,27 +332,25 @@ if __name__ == "__main__":
 
 
 
-
-    prev_td = pd.Timestamp.now(tz=tz).floor("D") - BDay(2)
-    print_to_do(df_all_open_volume_months, prev_td)
-    print_to_do(df_all_open_volume_quarters, prev_td)
-
-
-    prev_td = pd.Timestamp.now(tz=tz).floor("D") - BDay(1)
-    print_to_do(df_all_open_volume_months, prev_td)
-    print_to_do(df_all_open_volume_quarters, prev_td)
-
-
-    today_td = pd.Timestamp.now(tz=tz).floor("D")
-    print_to_do(df_all_open_volume_months, today_td)
-    print_to_do(df_all_open_volume_quarters, today_td)
-
-
+    today = pd.Timestamp.now(tz=tz).floor("D")
+    tds = [today - BDay(4),
+           today - BDay(3),
+           today - BDay(2),
+           today - BDay(1),
+           today,
+           ]
+    _total_pos = []
+    for td in tds:
+        df_M = print_to_do(df_all_open_volume_months, td)
+        df_Q = print_to_do(df_all_open_volume_quarters, td)
+        
+        total = (pd.concat([df_M, df_Q], axis=0))["Total Position ending td"]
+        _total_pos.append(total)
 
 
-
-
-
+    df_total_pos = pd.concat(_total_pos, axis=1)
+    df_total_pos.columns = tds
+    df_to_be_traded = df_total_pos.diff(axis=1)
 
 
 
