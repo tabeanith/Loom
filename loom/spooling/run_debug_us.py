@@ -56,7 +56,7 @@ if __name__ == "__main__":
         #  ----------------------------------------------  Market prices  ------------------------------------------
         ts_go = pd.Timestamp(date(2026, 8, 1), tz=tz)
 
-        symbol = "NQ"
+        symbol = "ES"
         #symbol = "MGC"
         tf = "5min"
         df = read_dataframe(symbol, tf)
@@ -91,8 +91,8 @@ if __name__ == "__main__":
         pricesQ = numba_rolling_quantile_q_value(prices.to_numpy(dtype=np.float32), 24*2)
         pricesQ = pd.Series(index=prices.index, data=pricesQ)
 
-        buys = ( (pricesQ < 0.2)).astype(int) * 3 * sentiment_bull
-        sells = (  (pricesQ > 0.8)).astype(int) * 3 * sentiment_bear
+        buys = ( (pricesQ < 0.3)).astype(int) * 3 * sentiment_bull
+        sells = (  (pricesQ > 0.7)).astype(int) * 3 * sentiment_bear
 
         mtm, open_volume = calculate_mtm_from_buy_sell(buys, sells, prices)
         _open_volume = (open_volume / 1.).astype(int) * 2.
@@ -129,10 +129,8 @@ if __name__ == "__main__":
 
         df11["tf"] = df11.index.ceil("h")
         score11 = df11.groupby(by="tf")["score"].mean()
-        scalevol = 3
-
-        impulse_buy = (score11 > score11.rolling(24).quantile(0.8)).astype(int) * 100
-        impulse_sell = (score11 < score11.rolling(24).quantile(0.2)).astype(int) * 100
+        impulse_buy = (score11 - score11.rolling(6).quantile(0.7)).clip(lower=0) / 100. * 50.
+        impulse_sell = (score11 - score11.rolling(6).quantile(0.3)).clip(upper=0).abs() / 100.* 50.
 
         impulse_buy = impulse_buy.reindex(prices.index).fillna(0.)
         impulse_sell = impulse_sell.reindex(prices.index).fillna(0.)
@@ -150,7 +148,7 @@ if __name__ == "__main__":
 
         #  ----------------------------------------------  Plot  -------------------------------------------------
 
-        print("mtm1", mtm1.iloc[-1], "mtm2", mtm2.iloc[-1])
+        print("mtm1", mtm1.iloc[-1], "mtm2", mtm2.iloc[-1], "mtm3", mtm3.iloc[-1])
         print("pips market", prices.iloc[-1] - prices.iloc[0])
 
         fig, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4, sharex=True)
