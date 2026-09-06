@@ -79,10 +79,6 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     buyY = (past & buysingular).astype(int) * 5 * n_contracts
     sellY = (prices_power > middle).astype(int) * 2 * n_contracts
 
-    bear_tp = 0
-    bull_tp = 0
-    bull_ext = 0
-    bear_ext = 0
     scores = pd.Series(index=idx_sentiment.index, data=np.nan)
     impulse_buy = pd.Series(index=idx_sentiment.index, data=0)
     impulse_sell = pd.Series(index=idx_sentiment.index, data=0)
@@ -109,11 +105,8 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     idx_sentiment_bull_abs = idx_sentiment.clip(lower=0).abs() / 100.
     idx_sentiment_bear_abs = idx_sentiment.clip(upper=0).abs() / 100.
 
-    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs + (bull_ext + bear_tp) + impulse_buy + sells_closing
-    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs  + (bear_ext + bull_tp) + buys_closing + impulse_sell
-
-   # total_buy = impulse_buy + sells_closing
-   # total_sell = buys_closing + impulse_sell
+    total_buy = buys * (1. - idx_sentiment_abs) + buyX * idx_sentiment_bull_abs + buyY * idx_sentiment_bear_abs + impulse_buy + sells_closing
+    total_sell = sells * (1. - idx_sentiment_abs) + sellX * idx_sentiment_bull_abs + sellY * idx_sentiment_bear_abs + buys_closing + impulse_sell
 
     total_buy = total_buy[mask_trading]
     total_sell = total_sell[mask_trading]
@@ -250,7 +243,7 @@ if __name__ == "__main__":
     df_prices_power = curves_power.resample(contract_sample).mean().T
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-    ts_contract = pd.Timestamp(date(2026, 9, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 1, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(4)
     mw_sizing = 5
     mw_maximum = 50
@@ -325,8 +318,8 @@ if __name__ == "__main__":
 
     today = pd.Timestamp.now(tz=tz).floor("D")
     tds = [
-        #today - BDay(7),
-       # today - BDay(6),
+        today - BDay(7),
+        today - BDay(6),
         today - BDay(5),
         today - BDay(4),
         today - BDay(3),
