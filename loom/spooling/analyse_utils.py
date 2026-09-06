@@ -113,3 +113,12 @@ def calculate_mtm_from_open_position(open_position_profile, prices: pd.Series=No
     sell_dirac = change.clip(upper=0) * -1
     return calculate_mtm_from_buy_sell(buy_dirac, sell_dirac, prices)
 
+
+def generate_closing_profile_from_trade_signals(rw: int, signal: pd.Series, prices: pd.Series=None):
+    pct = 1. / rw
+    if prices is not None:
+        signal = signal.reindex(prices.index).fillna(0)
+    closing = pd.Series(index=signal.index, data=0.)
+    for i in np.arange(1, rw + 1):
+        closing += closing.shift(i).fillna(0.) * pct
+    return closing

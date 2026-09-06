@@ -40,7 +40,7 @@ if __name__ == "__main__":
     if scrape_for_new_articles:
 
         # US Interest Rates
-        Reuters().run_scraper_to_topic_pipeline(["fed", "us yield", "us rate hike", "rate hike", "us rate cut", "rate cut", "us job report", "job report", "nonfarm payroll", "us treasury"], topic10)
+        Reuters().run_scraper_to_topic_pipeline(["fed", "us yield", "us rate hike", "rate hike", "us rate cut", "rate cut", "us job report", "nonfarm payroll", "us treasury"], topic10)
 
         # US Stocks
         Reuters().run_scraper_to_topic_pipeline(["wall street", "us stocks", "us economy", "us war", "trump"], topic11)

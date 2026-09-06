@@ -22,6 +22,7 @@ from loom.spooling.analyse_scores import calculate_sentiment_vn
 from loom.spooling.analyse_utils import calculate_mtm_from_buy_sell
 from loom.spooling.analyse_utils import calculate_mtm_from_open_position
 from loom.spooling.analyse_utils import get_bounded_open_volume
+from loom.spooling.analyse_utils import generate_closing_profile_from_trade_signals
 from loom.utils.kernel import numba_rolling_quantile_q_value
 
 
@@ -60,7 +61,7 @@ if __name__ == "__main__":
         tf = "5min"
         df = read_dataframe(symbol, tf)
         _df = df[df.index > ts_go]
-        prices = _df["open"].resample("5min").first()
+        prices = _df["open"].resample("h").first()
         prices = prices.dropna()
 
         #  ----------------------------------------------  Market sentiment  ---------------------------------------
@@ -74,21 +75,18 @@ if __name__ == "__main__":
         df11 = df11[df11["relevance"] == 1.]
 
 
-        df10["tf"] = df10.index.ceil("5min")
+        df10["tf"] = df10.index.ceil("h")
         score10 = df10.groupby(by="tf")["score"].mean()
-        score10mean = score10.rolling(15).quantile(0.5)#.reindex(prices.index).ffill()
+        score10mean = score10.rolling(12).quantile(0.5)
+        impulse_score10 = score10 - score10mean
 
-
-        df11["tf"] = df11.index.ceil("5min")
+        df11["tf"] = df11.index.ceil("h")
         score11 = df11.groupby(by="tf")["score"].mean()
-        score11mean = score11.rolling(15).quantile(0.5)#.reindex(prices.index).ffill()
+        score11mean = score11.rolling(12).quantile(0.5)
+        impulse_score11 = score11 - score11mean
 
 
-
-
-        score10 = score11
-        score10mean = score11mean
-        scalevol = 3
+        impulse_score = impulse_score10
         scalevol = 3
 
         #  ----------------------------------------------  Strats  -------------------------------------------------
@@ -109,14 +107,19 @@ if __name__ == "__main__":
 
 
 
-        buys1 = (score10 - score10mean).clip(lower=0) * scalevol
-        sells1 = (score10 - score10mean).clip(upper=0) * -1. * scalevol
-        mtm, open_volume = calculate_mtm_from_buy_sell(buys1, sells1, prices)
+
+        impulse_buy = impulse_score.clip(lower=0) * scalevol
+        impulse_sell = impulse_score.clip(upper=0) * -1. * scalevol
+
+        rw = 12
+        buys_closing = generate_closing_profile_from_trade_signals(impulse_buy, rw, prices)
+        sells_closing = generate_closing_profile_from_trade_signals(impulse_sell, rw, prices)
+
+
+
+        mtm, open_volume = calculate_mtm_from_buy_sell(impulse_buy + sells_closing, impulse_sell + buys_closing, prices)
         open_volume_bounded = get_bounded_open_volume(open_volume, _maximum, _minimum)
         mtm2, open_volume2 = calculate_mtm_from_open_position(open_volume_bounded / 200. * 10., prices)
-
-
-
 
 
 
