@@ -56,7 +56,7 @@ if __name__ == "__main__":
         #  ----------------------------------------------  Market prices  ------------------------------------------
         ts_go = pd.Timestamp(date(2026, 8, 1), tz=tz)
 
-        symbol = "ES"
+        symbol = "NQ"
         #symbol = "MGC"
         tf = "5min"
         df = read_dataframe(symbol, tf)
@@ -77,13 +77,22 @@ if __name__ == "__main__":
         _maximum = pd.Series(index=prices.index, data=200)
         _minimum = _maximum * -1.
 
+
+
         #  -------------------------------------  Strat 1: Price quantiles  ---------------------------------------
+
+        df11["tf"] = df11.index.ceil("h")
+        score11 = df11.groupby(by="tf")["score"].mean()
+        score11 = score11.rolling(12).quantile(0.5)
+        score11 = score11.reindex(prices.index).ffill()
+        sentiment_bull = score11.clip(lower=0) / 100. + 0.75
+        sentiment_bear = score11.clip(upper=0).abs() / 100. + 0.75
 
         pricesQ = numba_rolling_quantile_q_value(prices.to_numpy(dtype=np.float32), 24*2)
         pricesQ = pd.Series(index=prices.index, data=pricesQ)
 
-        buys = ( (pricesQ < 0.3)).astype(int) * 3
-        sells = (  (pricesQ > 0.7)).astype(int) * 3
+        buys = ( (pricesQ < 0.2)).astype(int) * 3 * sentiment_bull
+        sells = (  (pricesQ > 0.8)).astype(int) * 3 * sentiment_bear
 
         mtm, open_volume = calculate_mtm_from_buy_sell(buys, sells, prices)
         _open_volume = (open_volume / 1.).astype(int) * 2.
@@ -106,7 +115,7 @@ if __name__ == "__main__":
         impulse_buy = impulse_buy.reindex(prices.index).fillna(0.)
         impulse_sell = impulse_sell.reindex(prices.index).fillna(0.)
 
-        rw = 24
+        rw = 48
         buys_closing = generate_closing_profile_from_trade_signals(rw, impulse_buy)
         sells_closing = generate_closing_profile_from_trade_signals(rw, impulse_sell)
 
@@ -122,7 +131,7 @@ if __name__ == "__main__":
         score11 = df11.groupby(by="tf")["score"].mean()
         scalevol = 3
 
-        impulse_buy = (score11 > score11.rolling(24).quantile(0.8)).astype(int) *  100
+        impulse_buy = (score11 > score11.rolling(24).quantile(0.8)).astype(int) * 100
         impulse_sell = (score11 < score11.rolling(24).quantile(0.2)).astype(int) * 100
 
         impulse_buy = impulse_buy.reindex(prices.index).fillna(0.)
