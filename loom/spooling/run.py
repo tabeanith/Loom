@@ -43,7 +43,7 @@ if __name__ == "__main__":
         Reuters().run_scraper_to_topic_pipeline(["fed", "us rate hike", "rate hike", "us rate cut", "rate cut", "nonfarm payroll", "us treasury"], topic10)
 
         # US Stocks
-        Reuters().run_scraper_to_topic_pipeline(["wall street", "us stocks", "us economy", "us war"], topic11)
+        Reuters().run_scraper_to_topic_pipeline(["wall street", "us stocks", "us economy", "us war", "trump"], topic11)
 
         # EU weather
         SevereWeatherEurope().run_scraper_to_topic_pipeline(topic2)
