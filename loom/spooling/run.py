@@ -43,10 +43,10 @@ if __name__ == "__main__":
         Reuters().run_scraper_to_topic_pipeline(["fed", "us yield", "us rate hike", "rate hike", "us rate cut", "rate cut", "us job report", "nonfarm payroll", "us treasury"], topic10)
 
         # US Stocks
-        Reuters().run_scraper_to_topic_pipeline(["wall street", "us stocks", "us economy", "us war", "trump"], topic11)
+        Reuters().run_scraper_to_topic_pipeline(["wall street", "us stocks", "us economy", "us war", "energy assets", "trump"], topic11)
 
         # EU power
-        Reuters().run_scraper_to_topic_pipeline(["germany", "germany power prices", "germany renewables", "germany war", "rhine", "low river"], topic1)
+        Reuters().run_scraper_to_topic_pipeline(["germany", "germany power prices", "germany renewables", "germany war", "rhine", "low river", "energy assets"], topic1)
 
         # EU weather
         SevereWeatherEurope().run_scraper_to_topic_pipeline(topic2)
