@@ -217,14 +217,18 @@ if __name__ == "__main__":
     topic_gas_fuel = T03_Gas_Fuel()
 
 
-    list_of_topics = [topic_weather, topic_gas_fuel]
-    list_of_colors = ["blue", "orange"]
+    list_of_topics = [topic_eu, topic_weather, topic_gas_fuel]
+    list_of_colors = ["red", "blue", "orange"]
 
-    #df_score0 = topic_eu.calculate_scores(df)
+    df_score0 = topic_eu.calculate_scores(topic_eu.generate_references())
     df_score1 = topic_weather.calculate_scores(topic_weather.generate_references())
     df_score2 = topic_gas_fuel.calculate_scores(topic_gas_fuel.generate_references())
-    df_scores = pd.concat([df_score1, df_score2]).sort_values("timestamp")
 
+    for col in df_score1.columns:
+        if isinstance(col, pd.Timestamp):
+            df_score0[col] = df_score0["score"]
+
+    df_scores = pd.concat([df_score0, df_score1, df_score2]).sort_values("timestamp")
 
     curves_power = read_curves_from_onedrive(f"data_historical_2024+", Keys.power_germany)
     curves_power = extend_snapshot_days_to_today(curves_power)
