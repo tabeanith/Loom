@@ -5,7 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="36711e7c-d475-4837-a12b-06eaa44a716d" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/loom/spooling/analyse_ta_M_Q.py" beforeDir="false" afterPath="$PROJECT_DIR$/loom/spooling/analyse_ta_M_Q.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/loom/spooling/analyse_scores.py" beforeDir="false" afterPath="$PROJECT_DIR$/loom/spooling/analyse_scores.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/loom/spooling/source/universal_scraper.py" beforeDir="false" afterPath="$PROJECT_DIR$/loom/spooling/source/universal_scraper.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,17 +32,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.analyse_scores.executor": "Debug",
-    "Python.analyse_ta_M_Q.executor": "Debug",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/ws/projects/Loom",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PythonContentEntriesConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.analyse_scores.executor&quot;: &quot;Debug&quot;,
+    &quot;Python.analyse_ta_M_Q.executor&quot;: &quot;Debug&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/ws/projects/Loom&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PythonContentEntriesConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Python.analyse_ta_M_Q">
     <configuration name="analyse_scores" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Loom" />
@@ -118,31 +120,6 @@
           <url>file://$PROJECT_DIR$/loom/data/curves/get.py</url>
           <line>16</line>
           <option name="timeStamp" value="2" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/loom/spooling/analyse_scores.py</url>
-          <line>250</line>
-          <option name="timeStamp" value="4" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/loom/spooling/analyse_ta_M_Q.py</url>
-          <line>343</line>
-          <option name="timeStamp" value="7" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/loom/spooling/analyse_ta_M_Q.py</url>
-          <line>344</line>
-          <option name="timeStamp" value="8" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/loom/spooling/analyse_ta_M_Q.py</url>
-          <line>345</line>
-          <option name="timeStamp" value="9" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/loom/spooling/analyse_ta_M_Q.py</url>
-          <line>346</line>
-          <option name="timeStamp" value="10" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

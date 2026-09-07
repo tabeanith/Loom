@@ -47,25 +47,6 @@ class UniversalScraper(object):
         return file_path.is_file()
 
 
-    def generate_references(self):
-        path_existing_scrapes = self.path_folder / "scraps"
-        all_data = []
-
-        for dirpath, dirnames, filenames in os.walk(path_existing_scrapes):
-
-            for filename in filenames:
-                found_file_path = Path(dirpath) / filename
-
-                with open(found_file_path, "r") as f:
-                    data = json.load(f)
-                    data.pop("text")
-                    all_data.append(data)
-
-        df = pd.DataFrame(all_data)
-
-        save_references(df, self.path_folder.name)
-        #update_references(self.path_folder.name, df)
-
 
     def run_scraper(self):
         pass
