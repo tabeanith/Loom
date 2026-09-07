@@ -1,4 +1,3 @@
-import pstats
 
 from loom.spooling.source.severe_weather_europe.run import SevereWeatherEurope
 from loom.spooling.source.theguardian.run import TheGuardian
@@ -12,10 +11,7 @@ from loom.spooling.topics.t03_gas_fuel.topic import T03_Gas_Fuel
 from loom.spooling.topics.t10_us_rates.topic import T10_US_Rates
 from loom.spooling.topics.t11_us_stocks.topic import T11_US_Stocks
 
-from loom.spooling.llm.ask_and_answer import TBD_ask_and_save_answer
 from loom.spooling.llm.ask_and_answer import ask_and_answer_for_uuid
-
-from loom.spooling.source.references import load_references
 
 from loom.spooling.analyse_scores import calculate_sentiment_v1
 from loom.spooling.analyse_scores import calculate_sentiment_vn
