@@ -7,6 +7,7 @@ from pandas.tseries.offsets import BusinessDay, Day, YearBegin, MonthBegin, Hour
 
 
 from loom.data.keys import Keys
+from loom import running_at_enbw
 
 
 tz = "Europe/Berlin"
@@ -23,7 +24,10 @@ def read_curves_from_repository(folder, key):
 
 
 def read_curves_from_onedrive(folder, key):
-    path_file = Path(r"C:\Users\Lena\OneDrive\Dokumente\EnBW") / folder / f"{key}.csv.gz"
+    if running_at_enbw:
+        path_file = Path(r"C:\ws\projects\libs.catt\catt\portfolio\stat_trading_regimes") / folder / f"{key}.csv.gz"
+    else:
+        path_file = Path(r"C:\Users\Lena\OneDrive\Dokumente\EnBW") / folder / f"{key}.csv.gz"
 
     df = pd.read_csv(path_file, sep=";", decimal=",", index_col=0, header=0)
     df.index = pd.to_datetime(df.index, utc=True).tz_convert(tz)
