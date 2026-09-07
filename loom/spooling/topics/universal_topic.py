@@ -94,10 +94,27 @@ class UniversalTopic():
             for filename in filenames:
                 found_file_path = Path(dirpath) / filename
 
-                with open(found_file_path, "r") as f:
-                    data = json.load(f)
-                    data.pop("text")
-                    all_data.append(data)
+                try:
+                    with open(found_file_path, "r") as f:
+                        data = json.load(f)
+                        data.pop("text")
+                        all_data.append(data)
+                except:
+                    # Parsing error, for example due to git merging
+                    try:
+                        os.remove(found_file_path)
+                        print("Deleted file:", found_file_path)
+                    except:
+                        pass
+                    file = found_file_path.name
+                    for x in ["reuters", "theguardian", "severe_weather_europe"]:
+                        orig = self.path_folder.parent.parent.resolve() / "source" / x / "scraps" / file
+                        try:
+                            os.remove(orig)
+                            print("Deleted file:", orig)
+                        except:
+                            pass
+
 
         df = pd.DataFrame(all_data)
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, format="mixed").dt.tz_convert(tz)
