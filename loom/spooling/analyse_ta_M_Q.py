@@ -299,8 +299,8 @@ if __name__ == "__main__":
     contract_sampling = "MS"
     start_n_month_before_del = 3
     hours = 24 * 30
-    mw_sizing = 7.5
-    mw_maximum = 75
+    mw_sizing = 5
+    mw_maximum = 50
     total_mtm_months, df_all_open_volume_months = run(contract_sampling, start_n_month_before_del, hours, mw_sizing, mw_maximum)
 
 
