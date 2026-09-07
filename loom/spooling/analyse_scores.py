@@ -220,7 +220,7 @@ if __name__ == "__main__":
     list_of_topics = [topic_weather, topic_gas_fuel]
     list_of_colors = ["blue", "orange"]
 
-    #df_score0 = topic_eu.calculate_scores(df)
+    df_score0 = topic_eu.calculate_scores(topic_eu.generate_references())
     df_score1 = topic_weather.calculate_scores(topic_weather.generate_references())
     df_score2 = topic_gas_fuel.calculate_scores(topic_gas_fuel.generate_references())
     df_scores = pd.concat([df_score1, df_score2]).sort_values("timestamp")

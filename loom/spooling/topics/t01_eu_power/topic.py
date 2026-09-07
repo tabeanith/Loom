@@ -29,12 +29,19 @@ class T01_EU_Power(UniversalTopic):
             "france",
             "power",
             "energy",
+            "european",
+            "euro zone",
             "plant",
             "renewable",
             "solar",
             "pv",
             "park",
             "wind",
+            "rhine",
+            "level",
+            "shipping",
+            "sabotage",
+            "grid",
             "reserve",
             "lignite",
             "battery",
@@ -224,6 +231,7 @@ class T01_EU_Power(UniversalTopic):
                 intro = parts[0]
 
                 relevance = extract_answer_yes_no(parts[1], "relevance")
+                relevance = 0.25 if relevance == 0 else relevance
 
                 risk_score = extract_answer_int(parts[2], "risk")
 

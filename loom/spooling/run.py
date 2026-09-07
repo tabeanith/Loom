@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
         # EU weather
         SevereWeatherEurope().run_scraper_to_topic_pipeline(topic2)
-        Reuters().run_scraper_to_topic_pipeline(["europe weather", "europe climate change", "rhine"], topic2)
+        Reuters().run_scraper_to_topic_pipeline(["europe weather", "europe climate change", "rhine", "low river"], topic2)
         TheGuardian().run_scraper_to_topic_pipeline(TheGuardian().sub_pages_weather, topic2)
 
         # Gas market
