@@ -223,7 +223,7 @@ if __name__ == "__main__":
     #df_score0 = topic_eu.calculate_scores(df)
     df_score1 = topic_weather.calculate_scores(topic_weather.generate_references())
     df_score2 = topic_gas_fuel.calculate_scores(topic_gas_fuel.generate_references())
-    df_scores = pd.concat([df_score1, df_score2]).sort_values("timestamp", ascending=False)
+    df_scores = pd.concat([df_score1, df_score2]).sort_values("timestamp")
 
 
     curves_power = read_curves_from_onedrive(f"data_historical_2024+", Keys.power_germany)
@@ -246,10 +246,8 @@ if __name__ == "__main__":
     create_plot(ts_contract, df_prices_power, df_scores, df_contract_sentiment, map_contract_to_score,list_of_topics, list_of_colors)
 
 
+    df_scores[[ts_contract, "uuid", "url", "title"]]
 
-    print(df_scores)
-    print(df_score1)
-    print(df_score2)
 
 
 

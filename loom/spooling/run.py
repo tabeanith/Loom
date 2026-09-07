@@ -23,8 +23,8 @@ tz = "Europe/Berlin"
 if __name__ == "__main__":
 
     # ------------------------------------------  Work mode  ---------------------------------------------------------
-    scrape_for_new_articles = False
     scrape_for_new_articles = True
+    scrape_for_new_articles = False
 
     use_ai = True
     #use_ai = False
@@ -45,13 +45,16 @@ if __name__ == "__main__":
         # US Stocks
         Reuters().run_scraper_to_topic_pipeline(["wall street", "us stocks", "us economy", "us war", "trump"], topic11)
 
+        # EU power
+        Reuters().run_scraper_to_topic_pipeline(["germany", "germany power prices", "rhine", "low river"], topic1)
+
         # EU weather
         SevereWeatherEurope().run_scraper_to_topic_pipeline(topic2)
-        Reuters().run_scraper_to_topic_pipeline(["europe weather", "europe climate change"], topic2)
+        Reuters().run_scraper_to_topic_pipeline(["europe weather", "europe climate change", "rhine"], topic2)
         TheGuardian().run_scraper_to_topic_pipeline(TheGuardian().sub_pages_weather, topic2)
 
         # Gas market
-        Reuters().run_scraper_to_topic_pipeline(["natural gas", "germany natural gas", "europe lng", "germany lng", "germany power prices"], topic3)
+        Reuters().run_scraper_to_topic_pipeline(["natural gas", "germany natural gas", "europe lng", "germany lng", "europe energy", "germany power prices"], topic3)
         TheGuardian().run_scraper_to_topic_pipeline(TheGuardian().sub_pages_fuels, topic3)
 
         #TheGuardian().sanity_check_references()
