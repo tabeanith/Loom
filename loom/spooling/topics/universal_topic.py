@@ -44,12 +44,19 @@ class UniversalTopic():
         file_path = self.path_folder / "answers" / f"{uuid}.json"
 
         if self.check_if_topic_already_answered(uuid):
-            with open(file_path, "r") as f:
-                data = json.load(f)
-                text = data.get("text", "")
-                return text
+            try:
+                with open(file_path, "r") as f:
+                    data = json.load(f)
+                    text = data.get("text", "")
+                    return text
+            except:
+                os.remove(file_path)
+                print("Deleted file:", file_path)
         else:
             return ""
+
+
+
 
 
     def carry_articles(self, list_of_uuids):
