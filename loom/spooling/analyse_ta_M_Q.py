@@ -297,7 +297,7 @@ if __name__ == "__main__":
 
 
     contract_sampling = "MS"
-    start_n_month_before_del = 4
+    start_n_month_before_del = 3
     hours = 24 * 30
     mw_sizing = 5
     mw_maximum = 50
@@ -306,7 +306,7 @@ if __name__ == "__main__":
 
 
     contract_sampling = "QS"
-    start_n_month_before_del = 9
+    start_n_month_before_del = 6
     hours = 24 * 30 * 3
     mw_sizing = 2
     mw_maximum = 25
