@@ -145,7 +145,7 @@ def create_plot(
     # Optional: add a horizontal reference line at y=0
     fig.add_hline(y=0, line=dict(color="white", width=3))
 
-    fig.update_layout(title=f"Forward contract {ts_contract.strftime("%Y %B")} Base")
+    fig.update_layout(title=f"Forward contract {ts_contract.strftime('%Y %B')} Base")
     fig.show()
 
 

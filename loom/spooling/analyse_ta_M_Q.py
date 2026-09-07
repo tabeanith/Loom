@@ -237,11 +237,6 @@ if __name__ == "__main__":
     df_score0 = topic_eu.calculate_scores(df)
     df_score1 = topic_weather.calculate_scores(df)
     df_score2 = topic_gas_fuel.calculate_scores(df)
-
-    #for col in df_score1.columns:
-    #    if isinstance(col, pd.Timestamp):
-    #        df_score0[col] = df_score0["score"]
-
     df_scores = pd.concat([df_score1, df_score2]).sort_values("timestamp", ascending=False)
 
 
@@ -249,18 +244,18 @@ if __name__ == "__main__":
     curves_power = extend_snapshot_days_to_today(curves_power)
 
 
-    # Reduction for Monthlies --- TESTING
+    # TESTING --- Reduction for Monthlies
+    if False:
+        contract_sample = "MS"
+        df_prices_power = curves_power.resample(contract_sample).mean().T
+        df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-    contract_sample = "MS"
-    df_prices_power = curves_power.resample(contract_sample).mean().T
-    df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
+        ts_contract = pd.Timestamp(date(2026, 10, 1), tz=tz)
+        ts_start_trading = ts_contract - MonthBegin(4)
+        mw_sizing = 5
+        mw_maximum = 50
 
-    ts_contract = pd.Timestamp(date(2026, 10, 1), tz=tz)
-    ts_start_trading = ts_contract - MonthBegin(4)
-    mw_sizing = 5
-    mw_maximum = 50
-
-    mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, mw_maximum, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=True)
+        mtm, open_volumefinal = run_trade_strategy(ts_contract, ts_start_trading, mw_sizing, mw_maximum, df_prices_power, df_contract_sentiment, df_scores, map_contract_to_score, force_close_delivery=False, show_plot=True)
 
 
 
@@ -307,7 +302,7 @@ if __name__ == "__main__":
     contract_sampling = "QS"
     start_n_month_before_del = 9
     hours = 24 * 30 * 3
-    mw_sizing = 3
+    mw_sizing = 2
     mw_maximum = 25
     total_mtm_quarters, df_all_open_volume_quarters = run(contract_sampling, start_n_month_before_del, hours, mw_sizing, mw_maximum)
 
@@ -330,8 +325,6 @@ if __name__ == "__main__":
 
     today = pd.Timestamp.now(tz=tz).floor("D")
     tds = [
-        today - BDay(7),
-        today - BDay(6),
         today - BDay(5),
         today - BDay(4),
         today - BDay(3),
