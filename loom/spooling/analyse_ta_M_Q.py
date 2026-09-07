@@ -61,12 +61,14 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     lower = (prices_power.rolling(5).quantile(0.25))
 
 
-    # ------------------------------------- Trading -----------------------------------
+    # ------------------------------------------------------- Trading -----------------------------------------------
 
-    # STRAT --- Normal selling and buying
+
+    # -------------------- STRAT1   Buy/Sell based on price quantiles, weighted with sentiment  ---------------------
     buys = (prices_power < lower).astype(int) * n_contracts
     sells = (prices_power > upper).astype(int) * n_contracts
 
+    # ---------------- STRAT2   Buy/Sell based on strong price extensions, weighted with sentiment ------------------
     # STRAT --- Buying on positive sentiment
     past = (prices_power > upper).astype(int).rolling(5).mean() > 0.75
     sellsingular = (prices_power < middle).astype(int).diff() > 0
@@ -85,6 +87,7 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
     buys_closing = pd.Series(index=idx_sentiment.index, data=0)
     sells_closing = pd.Series(index=idx_sentiment.index, data=0)
 
+    # -------------------- STRAT3   Buy/Sell based on only data jumps in sentiment  ---------------------
     if ts_contract in map_contract_to_score.keys():
         _scores = df_scores[[map_contract_to_score[ts_contract], "relevance"]]
         _scores["day"] = [x.floor("D") if x.hour < 15 else x.ceil("D") for x in df_scores.index]
@@ -145,7 +148,7 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
         print(f"Contract {ts_contract} MtM:   ", result_mtm.iloc[-1])
 
     if show_plot:
-        fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, sharex=True)
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=4, sharex=True)
 
 
         prices_power.plot(ax=ax1, label="prices", color="black")
@@ -153,20 +156,29 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
         middle.plot(ax=ax1, label="prices0.5")
         lower.plot(ax=ax1, label="prices0.2")
 
+        # Sentiment
         ax2.scatter(x=scores.index, y=scores.values, label="scores", marker='o', linestyle='None')
         ax2.stem(scores.index, scores.values)
 
-        vol = 1
-        (vol*result_open_position).plot(ax=ax2, label="result_open_position", color="black")
-        (vol*total_buy).plot(ax=ax2, label="total_buy", color="green")
-        (vol*total_sell).plot(ax=ax2, label="total_sell", color="red")
         idx_sentiment.plot(ax=ax2, label="score_reduction", color="orange")
-        (vol*_maximum).plot(ax=ax2, label="open_pos_maximum", color="black", linestyle="dotted")
-        (vol*_minimum).plot(ax=ax2, label="open_pos_minimum", color="black", linestyle="dotted")
+        (idx_sentiment_bull_abs*100.).plot(ax=ax2, label="idx_sentiment_bull_abs", color="lime")
+        (idx_sentiment_bear_abs*100.).plot(ax=ax2, label="idx_sentiment_bear_abs", color="red")
 
+        # Positions
+        vol = 1
+        result_open_position = result_open_position.reindex(prices_power.index).ffill()
+        total_buy = total_buy.reindex(prices_power.index).ffill()
+        total_sell = total_sell.reindex(prices_power.index).ffill()
+        (vol*result_open_position).plot(ax=ax3, label="result_open_position", color="black")#
+        (vol*total_buy).plot(ax=ax3, label="total_buy", color="green")
+        (vol*total_sell).plot(ax=ax3, label="total_sell", color="red")
+        (vol*_maximum).plot(ax=ax3, label="open_pos_maximum", color="black", linestyle="dotted")
+        (vol*_minimum).plot(ax=ax3, label="open_pos_minimum", color="black", linestyle="dotted")
+        ax3.axhline(y=0.0, color='k', linestyle='-')
 
-        (vol * result_mtm * 31 * 24).plot(ax=ax3, label="result_mtm")
-        ax3.axhline(y=0.0, color='r', linestyle='-')
+        # PnL
+        (vol * result_mtm * 31 * 24).plot(ax=ax4, label="result_mtm")
+        ax4.axhline(y=0.0, color='k', linestyle='-')
 
         plt.legend()
         plt.show()
@@ -243,7 +255,7 @@ if __name__ == "__main__":
     df_prices_power = curves_power.resample(contract_sample).mean().T
     df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-    ts_contract = pd.Timestamp(date(2026, 1, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 10, 1), tz=tz)
     ts_start_trading = ts_contract - MonthBegin(4)
     mw_sizing = 5
     mw_maximum = 50
@@ -343,5 +355,7 @@ if __name__ == "__main__":
 
     print(df_total_pos)
 
+
+    print(df_to_be_traded)
 
 

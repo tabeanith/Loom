@@ -45,13 +45,16 @@ if __name__ == "__main__":
         # US Stocks
         Reuters().run_scraper_to_topic_pipeline(["wall street", "us stocks", "us economy", "us war", "trump"], topic11)
 
+        # EU power
+        Reuters().run_scraper_to_topic_pipeline(["germany", "germany power prices", "germany renewables", "germany war", "rhine", "low river"], topic1)
+
         # EU weather
         SevereWeatherEurope().run_scraper_to_topic_pipeline(topic2)
-        Reuters().run_scraper_to_topic_pipeline(["europe weather", "europe climate change"], topic2)
+        Reuters().run_scraper_to_topic_pipeline(["europe weather", "europe climate change", "rhine"], topic2)
         TheGuardian().run_scraper_to_topic_pipeline(TheGuardian().sub_pages_weather, topic2)
 
         # Gas market
-        Reuters().run_scraper_to_topic_pipeline(["natural gas", "germany natural gas", "europe lng", "germany lng", "germany power prices"], topic3)
+        Reuters().run_scraper_to_topic_pipeline(["natural gas", "germany natural gas", "europe lng", "germany lng", "europe energy", "germany power prices"], topic3)
         TheGuardian().run_scraper_to_topic_pipeline(TheGuardian().sub_pages_fuels, topic3)
 
         #TheGuardian().sanity_check_references()
@@ -69,7 +72,7 @@ if __name__ == "__main__":
         ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True)
 
     # Go through all topics
-    for topic in [topic2, topic3]:
+    for topic in [topic1, topic2, topic3]:
         ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True)
 
 

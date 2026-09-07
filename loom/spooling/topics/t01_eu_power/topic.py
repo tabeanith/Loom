@@ -263,4 +263,15 @@ class T01_EU_Power(UniversalTopic):
         return df_results
 
 
+if __name__ == "__main__":
+
+    # TODO: This is just for fixing something
+    if True:
+        topic = T01_EU_Power()
+        data = topic.get_all_topic_answers()
+        uuids = data.keys()
+
+        topic.carry_articles(uuids)
+
+
 

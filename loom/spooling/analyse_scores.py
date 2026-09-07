@@ -223,23 +223,16 @@ if __name__ == "__main__":
     #df_score0 = topic_eu.calculate_scores(df)
     df_score1 = topic_weather.calculate_scores(topic_weather.generate_references())
     df_score2 = topic_gas_fuel.calculate_scores(topic_gas_fuel.generate_references())
-
-    #for col in df_score1.columns:
-    #    if isinstance(col, pd.Timestamp):
-    #        df_score0[col] = df_score0["score"]
-
-
-    df_scores = pd.concat([df_score1, df_score2]).sort_values("timestamp", ascending=False)
+    df_scores = pd.concat([df_score1, df_score2]).sort_values("timestamp")
 
 
     curves_power = read_curves_from_onedrive(f"data_historical_2024+", Keys.power_germany)
     curves_power = extend_snapshot_days_to_today(curves_power)
 
 
-    # Reduction for Monthlies
+    # Prices and Reduction for Monthlies
 
     contract_sample = "MS"
-
     df_prices_power = curves_power.resample(contract_sample).mean().T
 
 
@@ -248,15 +241,13 @@ if __name__ == "__main__":
 
 
     # Plot datat for a single contract
-    ts_contract = pd.Timestamp(date(2026, 9, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 12, 1), tz=tz)
 
     create_plot(ts_contract, df_prices_power, df_scores, df_contract_sentiment, map_contract_to_score,list_of_topics, list_of_colors)
 
 
+    df_scores[[ts_contract, "relevance", "topic", "url", "title", "uuid",  ]]
 
-    print(df_scores)
-    print(df_score1)
-    print(df_score2)
 
 
 
