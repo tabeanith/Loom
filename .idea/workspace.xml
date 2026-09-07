@@ -4,6 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
+<<<<<<< HEAD
     <list default="true" id="36711e7c-d475-4837-a12b-06eaa44a716d" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/Loom.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Loom.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
@@ -12,6 +13,15 @@
       <change beforePath="$PROJECT_DIR$/loom/spooling/run_debug_us.py" beforeDir="false" afterPath="$PROJECT_DIR$/loom/spooling/run_debug_us.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/loom/spooling/topics/t01_eu_power/topic.py" beforeDir="false" afterPath="$PROJECT_DIR$/loom/spooling/topics/t01_eu_power/topic.py" afterDir="false" />
     </list>
+=======
+<<<<<<< HEAD
+    <list default="true" id="36711e7c-d475-4837-a12b-06eaa44a716d" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
+=======
+    <list default="true" id="36711e7c-d475-4837-a12b-06eaa44a716d" name="Changes" comment="" />
+>>>>>>> 1957e995f2963d404aca1961b1257b7598fb6123
+>>>>>>> 47ac9820c00b19bf022347d0474f6216bea9ca15
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
