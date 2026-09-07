@@ -344,4 +344,6 @@ if __name__ == "__main__":
     print(df_total_pos)
 
 
+    print(df_to_be_traded)
+
 
