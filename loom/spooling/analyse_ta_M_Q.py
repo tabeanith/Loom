@@ -302,7 +302,7 @@ if __name__ == "__main__":
     contract_sampling = "QS"
     start_n_month_before_del = 9
     hours = 24 * 30 * 3
-    mw_sizing = 3
+    mw_sizing = 2
     mw_maximum = 25
     total_mtm_quarters, df_all_open_volume_quarters = run(contract_sampling, start_n_month_before_del, hours, mw_sizing, mw_maximum)
 
@@ -325,8 +325,6 @@ if __name__ == "__main__":
 
     today = pd.Timestamp.now(tz=tz).floor("D")
     tds = [
-        today - BDay(7),
-        today - BDay(6),
         today - BDay(5),
         today - BDay(4),
         today - BDay(3),
