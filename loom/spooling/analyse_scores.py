@@ -246,7 +246,7 @@ if __name__ == "__main__":
     create_plot(ts_contract, df_prices_power, df_scores, df_contract_sentiment, map_contract_to_score,list_of_topics, list_of_colors)
 
 
-    df_scores[[ts_contract, "uuid", "url", "title"]]
+    df_scores[[ts_contract, "relevance", "topic", "url", "title", "uuid",  ]]
 
 
 

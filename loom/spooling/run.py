@@ -23,8 +23,8 @@ tz = "Europe/Berlin"
 if __name__ == "__main__":
 
     # ------------------------------------------  Work mode  ---------------------------------------------------------
-    scrape_for_new_articles = True
     scrape_for_new_articles = False
+    scrape_for_new_articles = True
 
     use_ai = True
     #use_ai = False
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         Reuters().run_scraper_to_topic_pipeline(["wall street", "us stocks", "us economy", "us war", "trump"], topic11)
 
         # EU power
-        Reuters().run_scraper_to_topic_pipeline(["germany", "germany power prices", "rhine", "low river"], topic1)
+        Reuters().run_scraper_to_topic_pipeline(["germany", "germany power prices", "germany renewables", "germany war", "rhine", "low river"], topic1)
 
         # EU weather
         SevereWeatherEurope().run_scraper_to_topic_pipeline(topic2)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True)
 
     # Go through all topics
-    for topic in [topic2, topic3]:
+    for topic in [topic1, topic2, topic3]:
         ask_and_save_answer(topic, pd.Timestamp.now(tz=tz) - Day(days_back_in_time), use_ai=True)
 
 
