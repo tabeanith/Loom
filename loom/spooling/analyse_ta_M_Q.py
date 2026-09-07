@@ -63,6 +63,7 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
 
     # ------------------------------------------------------- Trading -----------------------------------------------
 
+
     # -------------------- STRAT1   Buy/Sell based on price quantiles, weighted with sentiment  ---------------------
     buys = (prices_power < lower).astype(int) * n_contracts
     sells = (prices_power > upper).astype(int) * n_contracts
@@ -160,20 +161,24 @@ def run_trade_strategy(ts_contract, ts_start_trading, mw_sizing: int, mw_maximum
         ax2.stem(scores.index, scores.values)
 
         idx_sentiment.plot(ax=ax2, label="score_reduction", color="orange")
-        idx_sentiment_bull_abs.plot(ax=ax2, label="idx_sentiment_bull_abs", color="green")
-        idx_sentiment_bear_abs.plot(ax=ax2, label="idx_sentiment_bear_abs", color="red")
+        (idx_sentiment_bull_abs*100.).plot(ax=ax2, label="idx_sentiment_bull_abs", color="lime")
+        (idx_sentiment_bear_abs*100.).plot(ax=ax2, label="idx_sentiment_bear_abs", color="red")
 
         # Positions
         vol = 1
-        (vol*result_open_position).plot(ax=ax3, label="result_open_position", color="black")
+        result_open_position = result_open_position.reindex(prices_power.index).ffill()
+        total_buy = total_buy.reindex(prices_power.index).ffill()
+        total_sell = total_sell.reindex(prices_power.index).ffill()
+        (vol*result_open_position).plot(ax=ax3, label="result_open_position", color="black")#
         (vol*total_buy).plot(ax=ax3, label="total_buy", color="green")
         (vol*total_sell).plot(ax=ax3, label="total_sell", color="red")
         (vol*_maximum).plot(ax=ax3, label="open_pos_maximum", color="black", linestyle="dotted")
         (vol*_minimum).plot(ax=ax3, label="open_pos_minimum", color="black", linestyle="dotted")
+        ax3.axhline(y=0.0, color='k', linestyle='-')
 
         # PnL
         (vol * result_mtm * 31 * 24).plot(ax=ax4, label="result_mtm")
-        ax4.axhline(y=0.0, color='r', linestyle='-')
+        ax4.axhline(y=0.0, color='k', linestyle='-')
 
         plt.legend()
         plt.show()
