@@ -237,7 +237,13 @@ if __name__ == "__main__":
     df_score0 = topic_eu.calculate_scores(df)
     df_score1 = topic_weather.calculate_scores(df)
     df_score2 = topic_gas_fuel.calculate_scores(df)
-    df_scores = pd.concat([df_score1, df_score2]).sort_values("timestamp", ascending=False)
+
+    for col in df_score1.columns:
+        if isinstance(col, pd.Timestamp):
+            df_score0[col] = df_score0["score"]
+
+    df_scores = pd.concat([df_score0, df_score1, df_score2]).sort_values("timestamp")
+
 
 
     curves_power = read_curves_from_onedrive(f"data_historical_2024+", Keys.power_germany)
@@ -250,7 +256,7 @@ if __name__ == "__main__":
         df_prices_power = curves_power.resample(contract_sample).mean().T
         df_contract_sentiment, map_contract_to_score = calculate_sentiment_vn(df_scores, df_prices_power, lookback_days=7)
 
-        ts_contract = pd.Timestamp(date(2026, 10, 1), tz=tz)
+        ts_contract = pd.Timestamp(date(2026, 11, 1), tz=tz)
         ts_start_trading = ts_contract - MonthBegin(4)
         mw_sizing = 5
         mw_maximum = 50
