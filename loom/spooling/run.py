@@ -64,6 +64,7 @@ if __name__ == "__main__":
 
     # -------------------------  Check relevant topics and reviewing -------------------------------------------------
 
+
     days_back_in_time = 7
 
     print("\n Check for new aricles to be processed by AI \n")
