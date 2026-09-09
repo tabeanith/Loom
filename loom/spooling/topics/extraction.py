@@ -146,6 +146,9 @@ def roll_qs_to_months(timestamp, q1, q2, q3, q4, time):
     ts_start = pd.Timestamp(date(timestamp.year, timestamp.month, 1), tz=tz)
     months = pd.date_range(ts_start, freq="MS", periods=12)
     result = pd.Series(values, index=months)
+    result.iloc[-6] = np.nan
+    result.iloc[-5] = np.nan
+    result.iloc[-4] = np.nan
     result.iloc[-3] = np.nan
     result.iloc[-2] = np.nan
     result.iloc[-1] = np.nan
@@ -154,5 +157,6 @@ def roll_qs_to_months(timestamp, q1, q2, q3, q4, time):
     # TODO:
     # Factor in a deline for the months M+10, M+11, M+12
     # Consider the factor time to prolonge extreme pattern (maybe increase the values at the front?)
+    # TODO: above is the delivery window. shift all to get  have the risk trading window:
 
     return result

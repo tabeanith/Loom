@@ -11,6 +11,7 @@ import plotly.io as pio
 import plotly.graph_objects as go
 
 from pandas.tseries.offsets import MonthBegin, Day, Hour, Week, BDay
+import seaborn as sns
 
 
 pd.set_option('display.max_rows', 10000)
@@ -245,13 +246,27 @@ if __name__ == "__main__":
 
 
     # Plot datat for a single contract
-    ts_contract = pd.Timestamp(date(2027, 3, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2026, 10, 1), tz=tz)
 
     create_plot(ts_contract, df_prices_power, df_scores, df_contract_sentiment, map_contract_to_score,list_of_topics, list_of_colors)
 
 
     df_scores[[ts_contract, "relevance", "topic", "url", "title", "uuid",  ]]
 
+
+    today = pd.Timestamp(date.today(), tz=tz)
+    friday = today + pd.offsets.Week(weekday=4) - pd.offsets.Week(weekday=4) + Hour(16)
+    prev_friday = friday - pd.offsets.Week(weekday=4)
+    mask_since_friday = df_scores.index >= friday
+    mask_prev_week = df_scores.index >= prev_friday
+
+    f, axs = plt.subplots(1, 1,)
+    sns.kdeplot(df_scores[mask_since_friday].reset_index(), x=ts_contract, weights="relevance", bw_adjust=1, ax=axs, label="Since last Friday")
+    sns.kdeplot(df_scores[mask_prev_week].reset_index(), x=ts_contract, weights="relevance", bw_adjust=1, ax=axs, label="Since prev Friday")
+    sns.kdeplot(df_scores.reset_index(), x=ts_contract, weights="relevance", bw_adjust=1, ax=axs, label="All data")
+    #sns.displot(df_scores.reset_index(), x=ts_contract, kind="hist")
+    f.tight_layout()
+    plt.legend()
 
 
 

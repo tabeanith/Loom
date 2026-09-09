@@ -15,5 +15,6 @@ anthropic
 python-dotenv
 numba
 rich
+seaborn
 
 
