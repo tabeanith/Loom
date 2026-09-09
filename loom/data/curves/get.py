@@ -33,6 +33,13 @@ def read_curves_from_onedrive(folder, key):
     df.index = pd.to_datetime(df.index, utc=True).tz_convert(tz)
     df.columns = pd.to_datetime(df.columns, errors="coerce").tz_localize(tz)
 
+    if running_at_enbw:
+        # Also pull in LiveCurve from DB
+        from catt.data.dbb.client_mdd import QueryDBB
+
+        querydbb = QueryDBB()
+        live_power_germany = querydbb.get_power_germany_from_live_curve(ts, years=3)
+
     return df
 
 
