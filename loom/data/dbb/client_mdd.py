@@ -39,28 +39,24 @@ class QueryDBB:
     def get_spot_power_germany(self,
                                start_ts: pd.Timestamp,
                                end_ts_exclusive: pd.Timestamp):
-        query_not_done = True
         latest_as_of_ts = pd.Timestamp.now(tz="Europe/Berlin")
 
-        while query_not_done:
-            try:
-                curve = self.connector.query_slim(uuids=['PWRDE'],
-                                                  as_of_from=start_ts,
-                                                  as_of_to=end_ts_exclusive,
-                                                  period_from=start_ts,
-                                                  period_to=end_ts_exclusive)
+        try:
+            curve = self.connector.query_slim(uuids=['PWRDE'],
+                                              #as_of_from=end_ts_exclusive - Day(1),
+                                              #as_of_to=end_ts_exclusive,
+                                              period_from=start_ts,
+                                              period_to=end_ts_exclusive)
 
-                curve.index = pd.to_datetime(curve[DBBMDDAttribute.period_begin_dt], utc=True).dt.tz_convert(QueryDBB.tz)
-                curve = curve[DBBMDDAttribute.value]
-                curve = curve.resample('H').ffill()  # Hour 2b in October is NaN
-                spot = curve[(curve.index >= start_ts) & (curve.index < end_ts_exclusive)]
-                spot = spot[~spot.index.duplicated(keep="first")]
-                query_not_done = False
-            except:
-                traceback.print_exc()
-                print("Wait 5 seconds...")
-                time.sleep(5)
-                # Timeout? Wait, try again
+            curve.index = pd.to_datetime(curve[DBBMDDAttribute.period_begin_dt], utc=True).dt.tz_convert(QueryDBB.tz)
+            curve = curve[DBBMDDAttribute.value]
+            curve = curve.resample('H').ffill()  # Hour 2b in October is NaN
+            spot = curve[(curve.index >= start_ts) & (curve.index < end_ts_exclusive)]
+            spot = spot[~spot.index.duplicated(keep="first")]
+            query_not_done = False
+        except:
+            traceback.print_exc()
+
         return spot
 
     def get_spot_gas_the(self,
@@ -174,7 +170,8 @@ class QueryDBB:
             curve = curve[curve[DBBMDDAttribute.as_of_dt] == latest_found_ts]
             curve.index = pd.to_datetime(curve[DBBMDDAttribute.period_begin_dt], utc=True).dt.tz_convert(QueryDBB.tz)
             curve = curve[DBBMDDAttribute.value]
-            curve = curve.resample('H').ffill()  # Hour 2b in October is NaN
+            curve = curve.resample('h').ffill()  # Hour 2b in October is NaN
+            curve.name = latest_found_ts
             query_not_done = False
         except:
             traceback.print_exc()
