@@ -20,6 +20,6 @@ httpx
 pytz
 httpx_auth
 aenum
-
+boto3
 
 
