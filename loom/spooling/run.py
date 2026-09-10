@@ -47,7 +47,6 @@ if __name__ == "__main__":
 
         # EU power
         Reuters().run_scraper_to_topic_pipeline(["germany", "germany power prices", "germany renewables", "germany war", "rhine", "low river", "energy assets"], topic1)
-        Reuters().run_scraper(Reuters().selected_sub_pages, topic1)
 
         # EU weather
         SevereWeatherEurope().run_scraper_to_topic_pipeline(topic2)
