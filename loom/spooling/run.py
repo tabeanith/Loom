@@ -56,8 +56,10 @@ if __name__ == "__main__":
 
         # Gas market
         Reuters().run_scraper_to_topic_pipeline(["natural gas", "germany natural gas", "europe lng", "germany lng", "europe energy", "germany power prices"], topic3)
-        Reuters().run_scraper(Reuters().selected_sub_pages, topic3)
         TheGuardian().run_scraper_to_topic_pipeline(TheGuardian().sub_pages_fuels, topic3)
+
+        Reuters().run_scraper_to_topic_pipeline_v2(Reuters().selected_sub_pages, [topic1, topic3])
+
 
         #TheGuardian().sanity_check_references()
         #Reuters().sanity_check_references()

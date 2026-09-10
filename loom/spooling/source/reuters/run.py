@@ -82,6 +82,14 @@ class Reuters(UniversalScraper):
         topic.carry_articles(all_linked_uuids)
 
 
+    def run_scraper_to_topic_pipeline_v2(self, pages_linking_to_articles, topics):
+        all_linked_uuids = self.run_scraper(pages_linking_to_articles)
+
+        # Copy the scraped articles into the topic folder:
+        for topic in topics:
+            topic.carry_articles(all_linked_uuids)
+
+
     def run_scraper(self, pages_linking_to_articles):
         all_linked_uuids = []
 
