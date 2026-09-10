@@ -51,10 +51,9 @@ class QueryDBB:
 
             curve.index = pd.to_datetime(curve[DBBMDDAttribute.period_begin_dt], utc=True).dt.tz_convert(QueryDBB.tz)
             curve = curve[DBBMDDAttribute.value]
-            curve = curve.resample('H').ffill()  # Hour 2b in October is NaN
+            curve = curve.resample('h').ffill()  # Hour 2b in October is NaN
             spot = curve[(curve.index >= start_ts) & (curve.index < end_ts_exclusive)]
             spot = spot[~spot.index.duplicated(keep="first")]
-            query_not_done = False
         except:
             traceback.print_exc()
 

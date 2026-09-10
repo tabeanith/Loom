@@ -50,7 +50,7 @@ def read_curves_from_onedrive(folder, key):
         live_power_germany = querydbb.get_power_germany_from_live_curve(ts, years=3)
         df[ts.floor("D")] = live_power_germany.reindex(df.index)
 
-        live_power_germany = querydbb.get_spot_power_germany(df.index[0], live_power_germany.index[0])
+        spot_prices_germany = querydbb.get_spot_power_germany(df.index[0], live_power_germany.index[0])
 
     return df
 
