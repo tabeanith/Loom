@@ -18,6 +18,7 @@ rich
 seaborn
 httpx
 pytz
+httpx_auth
 
 
 
