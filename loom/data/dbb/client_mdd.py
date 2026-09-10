@@ -39,12 +39,13 @@ class QueryDBB:
     def get_spot_power_germany(self,
                                start_ts: pd.Timestamp,
                                end_ts_exclusive: pd.Timestamp):
+        query_not_done = True
         latest_as_of_ts = pd.Timestamp.now(tz="Europe/Berlin")
 
         try:
             curve = self.connector.query_slim(uuids=['PWRDE'],
-                                              #as_of_from=end_ts_exclusive - Day(1),
-                                              #as_of_to=end_ts_exclusive,
+                                              as_of_from=start_ts,
+                                              as_of_to=end_ts_exclusive + Day(360),
                                               period_from=start_ts,
                                               period_to=end_ts_exclusive)
 

@@ -45,12 +45,10 @@ def read_curves_from_onedrive(folder, key):
         _fill_in_eods = pd.bdate_range(_eod + BusinessDay(1), ts.floor("D") - BusinessDay(1))
         for _ts in _fill_in_eods:
             eod_power_germany = querydbb.get_power_germany_from_eod_curve(_ts + Day(1), years=3)
-            eod_power_germany = eod_power_germany.reindex(df.index)
-            df[_ts] = eod_power_germany
+            df[_ts] = eod_power_germany.reindex(df.index)
 
         live_power_germany = querydbb.get_power_germany_from_live_curve(ts, years=3)
-        live_power_germany = live_power_germany.reindex(df.index)
-        df[ts.floor("D")] = live_power_germany
+        df[ts.floor("D")] = live_power_germany.reindex(df.index)
 
         live_power_germany = querydbb.get_spot_power_germany(df.index[0], live_power_germany.index[0])
 
