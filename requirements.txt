@@ -17,6 +17,7 @@ numba
 rich
 seaborn
 httpx
+pytz
 
 
 
