@@ -332,6 +332,9 @@ if __name__ == "__main__":
 
     today = pd.Timestamp.now(tz=tz).floor("D")
     tds = [
+        today - BDay(8),
+        today - BDay(7),
+        today - BDay(6),
         today - BDay(5),
         today - BDay(4),
         today - BDay(3),
