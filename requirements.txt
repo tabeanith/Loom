@@ -19,6 +19,7 @@ seaborn
 httpx
 pytz
 httpx_auth
+aenumaenum
 
 
 
