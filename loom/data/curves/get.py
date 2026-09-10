@@ -35,9 +35,10 @@ def read_curves_from_onedrive(folder, key):
 
     if running_at_enbw:
         # Also pull in LiveCurve from DB
-        from catt.data.dbb.client_mdd import QueryDBB
+        from loom.data.dbb.client_mdd import QueryDBB
 
         querydbb = QueryDBB()
+        ts = pd.Timestamp.now(tz=tz)
         live_power_germany = querydbb.get_power_germany_from_live_curve(ts, years=3)
 
     return df
