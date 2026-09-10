@@ -11,8 +11,7 @@ from usp.common.data.dbb_mdd.connector import AsOfMode, DBBMDDAttribute, DBBMDDC
 from usp.common.data.dbb import DBBConnector, DBBConfig
 from usp.common.data.dbb_mdd import DBBMDDConnector, DBBMDDConfig
 
-from catt.utils.time import Timer
-from catt.data.dbb.identifiers_OLD import live_curve_fuels
+from loom.data.dbb.identifiers_OLD import live_curve_fuels
 
 
 class QueryDBB:
