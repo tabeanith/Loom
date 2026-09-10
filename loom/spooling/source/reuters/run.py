@@ -27,17 +27,14 @@ class Reuters(UniversalScraper):
 
     url_main = "https://www.reuters.com"
 
-    sub_pages = [
+    selected_sub_pages = [
         # Energy markets
         "https://www.reuters.com/site-search/?query=energy",
-        "https://www.reuters.com/site-search/?query=energy&offset=20",
         "https://www.reuters.com/site-search/?query=germany",
-        "https://www.reuters.com/site-search/?query=germany&offset=20",
         "https://www.reuters.com/site-search/?query=natural+gas",
-        "https://www.reuters.com/site-search/?query=natural+gas&offset=20",
         "https://www.reuters.com/site-search/?query=power+plant",
-        "https://www.reuters.com/site-search/?query=power+plant&offset=20",
         "https://www.reuters.com/authors/ron-bousso/",
+        "https://www.reuters.com/authors/jeslyn-lerh/",
         "https://www.reuters.com/authors/gavin-maguire/",
         "https://www.reuters.com/authors/mike-dolan/",
         "https://www.reuters.com/authors/forrest-crellin/",
