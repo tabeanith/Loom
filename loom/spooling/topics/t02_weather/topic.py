@@ -214,9 +214,12 @@ class T02_Weather(UniversalTopic):
 
                 relevance = extract_answer_int(parts[7], "severity") / 100.
                 relevance = 0 if np.isnan(relevance) else relevance
-                if relevance > 0.5: relevance = 1
-                elif relevance > 0.25: relevance = 0.25
-                else: relevance = 0.0
+                if relevance > 0.5:
+                    relevance = 1
+                elif relevance > 0.25:
+                    relevance = 0.5
+                else:
+                    relevance = 0.0
 
                 # Risk factor:
                 risk = (Q05_r * Q05_s - Q06_r * Q06_s) / (Q05_r + Q06_r)
