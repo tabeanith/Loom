@@ -254,17 +254,22 @@ if __name__ == "__main__":
     df_scores[[ts_contract, "relevance", "topic", "url", "title", "uuid",  ]]
 
 
+
+
+    _df_scores = df_scores[df_scores["relevance"] == 1]
+
+
     today = pd.Timestamp(date.today(), tz=tz)
     friday = today + pd.offsets.Week(weekday=4) - pd.offsets.Week(weekday=4) + Hour(16)
     prev_friday = friday - pd.offsets.Week(weekday=4)
-    mask_since_friday = df_scores.index >= friday
-    mask_prev_week = df_scores.index >= prev_friday
+    mask_since_friday = _df_scores.index >= friday
+    mask_prev_week = _df_scores.index >= prev_friday
 
     f, axs = plt.subplots(1, 1,)
-    sns.kdeplot(df_scores[mask_since_friday].reset_index(), x=ts_contract, weights="relevance", bw_adjust=1, ax=axs, label="Since last Friday")
-    sns.kdeplot(df_scores[mask_prev_week].reset_index(), x=ts_contract, weights="relevance", bw_adjust=1, ax=axs, label="Since prev Friday")
-    sns.kdeplot(df_scores.reset_index(), x=ts_contract, weights="relevance", bw_adjust=1, ax=axs, label="All data")
-    #sns.displot(df_scores.reset_index(), x=ts_contract, kind="hist")
+    sns.kdeplot(_df_scores[mask_since_friday].reset_index(), x=ts_contract, weights="relevance", bw_adjust=1, ax=axs, label="Since last Friday")
+    sns.kdeplot(_df_scores[mask_prev_week].reset_index(), x=ts_contract, weights="relevance", bw_adjust=1, ax=axs, label="Since prev Friday")
+    sns.kdeplot(_df_scores.reset_index(), x=ts_contract, weights="relevance", bw_adjust=1, ax=axs, label="All data")
+    #sns.displot(_df_scores.reset_index(), x=ts_contract, kind="hist")
     f.tight_layout()
     plt.legend()
 
