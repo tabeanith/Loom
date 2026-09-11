@@ -305,6 +305,7 @@ if __name__ == "__main__":
 
 
 
+
     contract_sampling = "QS"
     start_n_month_before_del = 9
     hours = 24 * 30 * 3
