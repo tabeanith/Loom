@@ -257,6 +257,7 @@ if __name__ == "__main__":
 
 
     _df_scores = df_scores[df_scores["relevance"] == 1]
+    print("Datapoints:", _df_scores.shape[0])
 
 
     today = pd.Timestamp(date.today(), tz=tz)
