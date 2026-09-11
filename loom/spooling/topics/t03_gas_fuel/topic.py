@@ -217,7 +217,7 @@ class T03_Gas_Fuel(UniversalTopic):
                 if relevance > 0.5:
                     relevance = 1
                 elif relevance > 0.25:
-                    relevance = 0.25
+                    relevance = 0.5
                 else:
                     relevance = 0.0
 

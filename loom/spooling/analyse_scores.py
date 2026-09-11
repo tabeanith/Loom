@@ -255,17 +255,11 @@ if __name__ == "__main__":
     today = pd.Timestamp(date.today(), tz=tz)
     friday = today + pd.offsets.Week(weekday=4) - pd.offsets.Week(weekday=4) + Hour(16)
     prev_friday = friday - pd.offsets.Week(weekday=4)
-    mask_since_friday = df_articles.index >= friday
-    mask_relevant = df_articles["relevance"] > 0.9
+    mask_since_friday = df_articles.index >= prev_friday
+    mask_relevant = df_articles["relevance"] > 0.15
 
-    df_articles[mask_since_friday & mask_relevant]
-
-
-
-
-
-
-
+    df_highest = df_articles[mask_since_friday & mask_relevant].sort_values(ts_contract)
+    df_lowest = df_articles[mask_since_friday].sort_values(ts_contract, ascending=False)
 
 
 

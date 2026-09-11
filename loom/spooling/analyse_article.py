@@ -47,10 +47,11 @@ if __name__ == "__main__":
     _uuid = uuid.uuid5(uuid.NAMESPACE_DNS, link)
 
     _uuid = "9854bac4-bb66-58c3-85a8-73045641d510"
-    _uuid = "a6097cb2-100a-5e3a-b8ec-2c7dcd0c0f6d"
+    _uuid = "218b6402-1b94-50e8-9204-b08554f63e97"
 
     topic = T10_US_Rates()
     topic = T11_US_Stocks()
+    topic = T03_Gas_Fuel()
 
     txt = find_scraped_article_content(_uuid)
     md_txt = Markdown(txt)
