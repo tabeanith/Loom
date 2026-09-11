@@ -246,7 +246,7 @@ if __name__ == "__main__":
 
 
     # Plot datat for a single contract
-    ts_contract = pd.Timestamp(date(2026, 10, 1), tz=tz)
+    ts_contract = pd.Timestamp(date(2027, 1, 1), tz=tz)
 
     create_plot(ts_contract, df_prices_power, df_scores, df_contract_sentiment, map_contract_to_score,list_of_topics, list_of_colors)
 
@@ -256,7 +256,10 @@ if __name__ == "__main__":
 
 
 
-    _df_scores = df_scores[df_scores["relevance"] == 1]
+    _df_scores = df_scores
+    #_df_scores = df_scores[df_scores["relevance"] == 1]
+    mask = _df_scores[ts_contract] > 100
+    _df_scores.loc[mask, ts_contract] = 100
     print("Datapoints:", _df_scores.shape[0])
 
 
@@ -267,9 +270,9 @@ if __name__ == "__main__":
     mask_prev_week = _df_scores.index >= prev_friday
 
     f, axs = plt.subplots(1, 1,)
-    sns.kdeplot(_df_scores[mask_since_friday].reset_index(), x=ts_contract, weights="relevance", bw_adjust=1, ax=axs, label="Since last Friday")
-    sns.kdeplot(_df_scores[mask_prev_week].reset_index(), x=ts_contract, weights="relevance", bw_adjust=1, ax=axs, label="Since prev Friday")
-    sns.kdeplot(_df_scores.reset_index(), x=ts_contract, weights="relevance", bw_adjust=1, ax=axs, label="All data")
+    sns.kdeplot(_df_scores[mask_since_friday].reset_index(), x=ts_contract, weights="relevance", bw_adjust=0.5, ax=axs, label="Since last Friday")
+    sns.kdeplot(_df_scores[mask_prev_week].reset_index(), x=ts_contract, weights="relevance", bw_adjust=0.5, ax=axs, label="Since prev Friday")
+    sns.kdeplot(_df_scores.reset_index(), x=ts_contract, weights="relevance", bw_adjust=0.5, ax=axs, label="All data")
     #sns.displot(_df_scores.reset_index(), x=ts_contract, kind="hist")
     f.tight_layout()
     plt.legend()
