@@ -251,7 +251,33 @@ if __name__ == "__main__":
     create_plot(ts_contract, df_prices_power, df_scores, df_contract_sentiment, map_contract_to_score,list_of_topics, list_of_colors)
 
 
-    df_scores[[ts_contract, "relevance", "topic", "url", "title", "uuid",  ]]
+    df_articles = df_scores[[ts_contract, "relevance", "topic", "url", "title", "uuid",  ]]
+    today = pd.Timestamp(date.today(), tz=tz)
+    friday = today + pd.offsets.Week(weekday=4) - pd.offsets.Week(weekday=4) + Hour(16)
+    prev_friday = friday - pd.offsets.Week(weekday=4)
+    mask_since_friday = df_articles.index >= friday
+    mask_relevant = df_articles["relevance"] > 0.9
+
+    df_articles[mask_since_friday & mask_relevant]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
