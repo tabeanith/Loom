@@ -292,6 +292,7 @@ if __name__ == "__main__":
         return total_mtm, df_all_open_volume
 
 
+
     # All monthlies, All quarterlies
 
 
@@ -302,7 +303,6 @@ if __name__ == "__main__":
     mw_sizing = 4
     mw_maximum = 40
     total_mtm_months, df_all_open_volume_months = run(contract_sampling, start_n_month_before_del, hours, mw_sizing, mw_maximum)
-
 
 
 
@@ -324,7 +324,6 @@ if __name__ == "__main__":
 
 
 
-
     total_mtm_months.plot(color="orange", label="total_mtm_months")
     total_mtm_quarters.plot(color="blue", label="total_mtm_quarters")
     (total_mtm_months + total_mtm_quarters).plot(color="black", label="total_mtm_quarters")
@@ -336,7 +335,6 @@ if __name__ == "__main__":
     df_all_open_volume_months.sum(axis=1).plot(color="orange", label="total_mtm_months")
     df_all_open_volume_quarters.sum(axis=1).plot(color="blue", label="total_mtm_quarters")
     (df_all_open_volume_months.sum(axis=1) + df_all_open_volume_quarters.sum(axis=1)).plot(color="black", label="total_mtm_quarters")
-
 
 
 
