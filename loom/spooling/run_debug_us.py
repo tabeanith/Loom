@@ -125,8 +125,8 @@ if __name__ == "__main__":
 
         df11["tf"] = df11.index.ceil("h")
         score11 = df11.groupby(by="tf")["score"].mean()
-        impulse_buy = (score11 - score11.rolling(6).quantile(0.7)).clip(lower=0) / 100. * 50.
-        impulse_sell = (score11 - score11.rolling(6).quantile(0.3)).clip(upper=0).abs() / 100.* 50.
+        impulse_buy = (score11 - score11.rolling(6).quantile(0.7)).clip(lower=0) / 100. * 25.
+        impulse_sell = (score11 - score11.rolling(6).quantile(0.3)).clip(upper=0).abs() / 100.* 25.
 
         impulse_buy = impulse_buy.reindex(prices.index).fillna(0.)
         impulse_sell = impulse_sell.reindex(prices.index).fillna(0.)
