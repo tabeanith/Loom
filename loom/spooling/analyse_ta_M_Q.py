@@ -316,7 +316,7 @@ if __name__ == "__main__":
 
 
     contract_sampling = "YS"
-    start_n_month_before_del = 48
+    start_n_month_before_del = 36
     hours = 365 * 24
     mw_sizing = 2
     mw_maximum = 20
