@@ -81,7 +81,7 @@ class FinancialTimes(UniversalScraper):
 
                     self.save_html(page1)
 
-                    elements = page1.locator('[data-testid="TitleLink"]')
+                    elements = page1.locator('[class="o-teaser___content"]')
                     elements.count()
 
                     for el in elements.all():
