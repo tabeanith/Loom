@@ -79,24 +79,20 @@ class FinancialTimes(UniversalScraper):
                     page1.goto(sub_page)
                     sleep(5)
 
-                    #self.save_html(page1)
-
-                    elements = page1.locator('.o-teaser__heading')#.all()
+                    elements = page1.locator('.o-grid-container').locator('.o-teaser__heading')
                     elements.count()
 
                     for el in elements.all():
-
                         # ------------------------------ Search for article links --------------------------------
 
-                        link = el.get_attribute("href")
-
-                        print(link)
+                        link = el.locator("a").get_attribute("href")
+                        title = el.locator("a").inner_text()
 
                         if link is None: continue
                         if title is None: continue
 
                         if "https" not in link:
-                            link = "https://www.reuters.com" + link
+                            link = "https://www.ft.com" + link
 
                         _uuid = uuid.uuid5(uuid.NAMESPACE_DNS, link)
                         all_linked_uuids.append(_uuid)
@@ -111,34 +107,30 @@ class FinancialTimes(UniversalScraper):
 
                         try:
                             author = ""
-                            title =  link.split("/")[-2]
-
-                            match_date = re.search(r'(\d{4}.\d{2}.\d{2})(?!.*\d{4}.\d{2}.\d{2})', title)
-                            date_str = match_date.group(1)
-                            ts_published = pd.Timestamp(datetime.strptime(date_str, "%Y-%m-%d"), tz=tz)
-
-                            title =  title.replace("-", " ")
+                            #match_date = re.search(r'(\d{4}.\d{2}.\d{2})(?!.*\d{4}.\d{2}.\d{2})', title)
+                            #date_str = match_date.group(1)
+                           # ts_published = pd.Timestamp(datetime.strptime(date_str, "%Y-%m-%d"), tz=tz)
 
                             page2 = browser.new_page()
                             page2.goto(link)
                             sleep(5)
 
                             # --------------- Try article autor ---------------
-                            _elements = page2.locator('[data-testid="AuthorCard"]').locator('p')
+                            _elements = page2.locator('body *').locator('.article__content').locator('.article-info__timestamp-item')
                             if _elements.count() > 0:
                                 author = _elements.nth(0).inner_text()
                                 #print(author)
 
                             # --------------- Try article publish date ---------------
-                            _elements = page2.locator('[data-testid="DateLine"]')
+                            _elements = page2.locator('[id="article-body"]')
                             if _elements.count() > 0:
                                 ts_str = _elements.nth(0).get_attribute("datetime")
                                 ts_published = pd.Timestamp(ts_str).tz_convert(tz)
                                 #print(ts_published)
 
                             # --------------- Get article content ---------------
-                            _article = page2.locator('[data-testid="ArticleBody"] *')
-                            _article.count()
+                            _elements = page2.locator('[id="article-body"]')
+                            _elements.count()
 
                             text = []
                             for el in _article.all():
