@@ -45,6 +45,7 @@ if __name__ == "__main__":
         # US Stocks
         Reuters().run_scraper_to_topic_pipeline(["wall street", "us stocks", "us economy", "us war", "energy assets", "trump"], topic11)
 
+
         # EU power
         Reuters().run_scraper_to_topic_pipeline(["germany", "germany power prices", "germany renewables", "germany war", "rhine", "low river", "energy assets"], topic1)
 
