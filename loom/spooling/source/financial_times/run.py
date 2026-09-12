@@ -79,17 +79,18 @@ class FinancialTimes(UniversalScraper):
                     page1.goto(sub_page)
                     sleep(5)
 
-                    self.save_html(page1)
+                    #self.save_html(page1)
 
-                    elements = page1.locator('[class="o-teaser___content"]')
+                    elements = page1.locator('.o-teaser__heading')#.all()
                     elements.count()
 
                     for el in elements.all():
 
                         # ------------------------------ Search for article links --------------------------------
 
-                        title = el.inner_text()
                         link = el.get_attribute("href")
+
+                        print(link)
 
                         if link is None: continue
                         if title is None: continue
