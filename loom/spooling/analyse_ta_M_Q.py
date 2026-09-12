@@ -316,10 +316,10 @@ if __name__ == "__main__":
 
 
     contract_sampling = "YS"
-    start_n_month_before_del = 36
+    start_n_month_before_del = 24
     hours = 365 * 24
-    mw_sizing = 2
-    mw_maximum = 20
+    mw_sizing = 5
+    mw_maximum = 50
     total_mtm_quarters, df_all_open_volume_quarters = run(contract_sampling, start_n_month_before_del, hours, mw_sizing, mw_maximum)
 
 
